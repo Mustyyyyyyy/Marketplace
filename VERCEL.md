@@ -2,8 +2,8 @@
 
 The repository supports two Vercel projects: one for the backend and one for
 the Next.js frontend. This is the recommended deployment because each project
-has a clear Root Directory and the frontend can point to the backend URL using
-environment variables.
+has a clear Root Directory and its own `vercel.json`. Do not configure either
+project with the repository-root install command.
 
 ## Vercel project settings
 
