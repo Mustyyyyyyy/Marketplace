@@ -1,8 +1,6 @@
 'use client';
 import Link from 'next/link';
 
-const HERO_IMG = 'https://lh3.googleusercontent.com/aida-public/AB6AXuDbDqmeJCnNrEzbBHJxsnce-q4PgJj1lPl25oDj5TSyfGkkMM8qmnBCE9Fkacp4d0ose1UFuZBlmy5injYtzaXupYPgOLjvjeatYXFA2LAC-byOgSZ9_DSw1yAwpV41rfJlO_qiHUR8e2a8_27s0u0xsOK3zhl3OJVwPHR3jCXsI8O33KQnycy26eb1J2hAUKVqomQFJXycApuQzofMBk0xIG6jWDE0il8u-tlNwY7TZ7ifVQ95Alc';
-
 export default function Hero({ stats }: { stats: { taskersTotal: number; openTasks: number; tasksTotal: number; completedTasks: number } }) {
   return (
     <section className="relative overflow-hidden pt-space-xl pb-space-3xl lg:pb-space-4xl">
@@ -32,9 +30,25 @@ export default function Hero({ stats }: { stats: { taskersTotal: number; openTas
           </div>
         </div>
         <div className="lg:col-span-6 relative">
-          <div className="relative rounded-2xl overflow-hidden shadow-xl bg-surface-container-high aspect-[16/10] sm:aspect-[16/9] lg:aspect-[4/3] flex items-center justify-center">
-            <img className="w-full h-full object-cover" alt="A dual-sided marketplace scene: a customer and a master craftsman side-by-side" src={HERO_IMG} />
-            <div className="absolute inset-0 bg-gradient-to-t from-primary-container/40 via-transparent to-transparent pointer-events-none"></div>
+          <div className="relative rounded-2xl overflow-hidden shadow-xl bg-surface-container-high aspect-[16/10] sm:aspect-[16/9] lg:aspect-[4/3] flex items-center justify-center p-space-xl">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(49,107,243,0.18),transparent_40%),radial-gradient(circle_at_80%_80%,rgba(12,148,136,0.16),transparent_38%)]" />
+            <div className="relative w-full max-w-md rounded-2xl bg-surface-container-lowest p-space-md shadow-lg border border-outline-variant">
+              <div className="flex items-center justify-between border-b border-outline-variant pb-space-sm">
+                <span className="font-label-lg text-label-lg font-bold text-on-surface">Your next task</span>
+                <span className="material-symbols-outlined text-secondary">task_alt</span>
+              </div>
+              <div className="mt-space-md space-y-space-sm">
+                {['Home repairs', 'Moving help', 'Design support'].map((task, index) => (
+                  <div key={task} className="flex items-center gap-space-sm rounded-xl bg-surface-container-low p-space-sm">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary-fixed text-secondary font-bold">{index + 1}</span>
+                    <div className="min-w-0">
+                      <p className="font-label-lg text-label-lg font-semibold text-on-surface">{task}</p>
+                      <p className="font-body-sm text-body-sm text-on-surface-variant">{index === 0 ? 'Nearby professionals' : 'Trusted community members'}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
             <div className="absolute top-4 left-4 sm:top-6 sm:left-6 max-w-[260px] sm:max-w-xs p-space-sm rounded-xl bg-surface-container-lowest/95 backdrop-blur-md shadow-lg flex items-center gap-space-xs">
               <div className="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center flex-shrink-0">
                 <span className="material-symbols-outlined text-xl text-on-tertiary-container">task_alt</span>

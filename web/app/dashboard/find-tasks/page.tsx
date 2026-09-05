@@ -12,7 +12,7 @@ export default function FindTasksPage() {
   const [data, setData] = useState<any>({ items: [], total: 0 });
   const [categories, setCategories] = useState<any[]>([]);
   const [page, setPage] = useState(1);
-  const [activeTab, setActiveTab] = useState('All Matches (28)');
+  const [activeTab, setActiveTab] = useState('All Matches');
 
   useEffect(() => { fetch('/api/backend/api/categories').then((r) => r.json()).then((j) => setCategories(j.categories || [])); }, []);
 
@@ -31,7 +31,7 @@ export default function FindTasksPage() {
     <DashboardShell>
       <Greeting
         name="find tasks"
-        subtitle="Curated contracts matching your skills, location and rates. Send a great offer to win the work."
+        subtitle="Find open work that matches your skills, location and rates, then send an offer."
         action={
           <Link href="/dashboard/offers" className="inline-flex items-center gap-space-xs h-12 px-space-lg rounded-xl bg-primary-container text-on-secondary-container font-label-lg text-label-lg shadow-sm hover:bg-inverse-surface transition-all">
             <span className="material-symbols-outlined text-[20px]">workspace_premium</span>
@@ -41,10 +41,10 @@ export default function FindTasksPage() {
       />
 
       <section className="grid grid-cols-2 md:grid-cols-4 gap-space-md mb-space-xl">
-        <StatCard label="Available Now" value={28} hint="+5 in last hour" icon="bolt" tone="info" trend="up" />
-        <StatCard label="Remote" value={19} icon="public" tone="success" />
-        <StatCard label="Local" value={9} icon="location_on" tone="neutral" />
-        <StatCard label="Avg. budget" value="$920" icon="attach_money" tone="warning" />
+      <StatCard label="Available now" value={data.total || 0} icon="bolt" tone="info" />
+      <StatCard label="Remote" value={data.items?.filter((t: any) => t.mode === 'REMOTE').length || 0} icon="public" tone="success" />
+      <StatCard label="Local" value={data.items?.filter((t: any) => t.mode === 'LOCAL').length || 0} icon="location_on" tone="neutral" />
+      <StatCard label="Avg. budget" value={data.items?.length ? `${data.items[0].currency || ''} ${Math.round(data.items.reduce((sum: number, t: any) => sum + Number(t.budgetAmount || 0), 0) / data.items.length).toLocaleString()}` : '—'} icon="attach_money" tone="warning" />
       </section>
 
       <form onSubmit={(e) => { e.preventDefault(); setPage(1); }} className="p-space-lg rounded-2xl bg-surface-container-lowest shadow-sm mb-space-xl">
@@ -73,7 +73,7 @@ export default function FindTasksPage() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-1.5 mt-space-md">
-          {['All Matches (28)', 'Remote Design', 'Brand Identity', 'UI/UX Systems', 'London / Local'].map((c) => (
+          {['All Matches'].map((c) => (
             <button key={c} type="button" onClick={() => setActiveTab(c)} className={`px-3 py-1.5 rounded-xl font-label-sm text-label-sm whitespace-nowrap ${activeTab === c ? 'bg-primary-container text-on-secondary-container shadow-sm' : 'bg-surface-container text-on-surface-variant'}`}>{c}</button>
           ))}
         </div>

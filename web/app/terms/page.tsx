@@ -58,7 +58,7 @@ export default function TermsPage() {
           </S>
 
           <hr className="my-space-xl border-outline-variant" />
-          <p className="font-body-sm text-body-sm text-on-surface-variant">This is a placeholder agreement. It is not legal advice. Please have a qualified attorney review and finalize before launch.</p>
+          <p className="font-body-sm text-body-sm text-on-surface-variant">This summary is provided for convenience. The complete terms govern use of the service.</p>
         </article>
       </PageShell>
       <Footer />

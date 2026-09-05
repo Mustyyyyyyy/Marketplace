@@ -28,8 +28,8 @@ export default function SearchBar({ categories }: { categories: { id: string; na
             <p className="font-body-md text-body-md text-on-surface-variant">Find skilled professionals or post specific jobs in minutes</p>
           </div>
           <div className="flex items-center gap-space-xs text-on-surface-variant font-label-md text-label-md">
-            <span className="material-symbols-outlined text-secondary text-sm">flash_on</span>
-            <span>Average response time: <strong>8 minutes</strong></span>
+            <span className="material-symbols-outlined text-secondary text-sm">verified</span>
+            <span>Clear requests. Trusted professionals.</span>
           </div>
         </div>
         <form className="grid grid-cols-1 md:grid-cols-12 gap-space-xs bg-surface-container-low p-space-xs rounded-xl" onSubmit={submit}>
