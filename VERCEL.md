@@ -17,8 +17,8 @@ Create two Vercel projects from the same GitHub repository.
 | Root Directory | `backend` |
 | Framework Preset | Other |
 | Install Command | `npm install && npm run prisma:generate` |
-| Build Command | Leave blank |
-| Output Directory | Leave blank |
+| Build Command | `npm run build` |
+| Output Directory | `dist` |
 | Development Command | Leave blank |
 
 `backend/vercel.json` supplies the serverless function and route rewrite.
@@ -74,7 +74,7 @@ deployments.
 After deployment, check:
 
 ```text
-https://your-backend-project.vercel.app/health
+https://marketplace-backend-sable.vercel.app/health
 ```
 
 The expected response is JSON containing `"ok": true`.

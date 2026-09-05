@@ -2,7 +2,7 @@
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_API_BASE ||
   (process.env.VERCEL
-    ? 'https://marketplace-2wmu41owh-adebayos-projects-1eb7ca4e.vercel.app'
+    ? 'https://marketplace-backend-sable.vercel.app'
     : 'http://localhost:4000');
 
 const nextConfig = {

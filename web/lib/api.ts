@@ -2,7 +2,7 @@
 const BASE =
   process.env.BACKEND_INTERNAL_URL ||
   (process.env.VERCEL
-    ? 'https://marketplace-2wmu41owh-adebayos-projects-1eb7ca4e.vercel.app'
+    ? 'https://marketplace-backend-sable.vercel.app'
     : 'http://localhost:4000');
 
 export async function api<T = any>(path: string, init?: RequestInit): Promise<T> {
