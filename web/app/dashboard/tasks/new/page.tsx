@@ -5,12 +5,12 @@ import DashboardShell from '@/components/DashboardShell';
 import { Greeting } from '@/components/DashboardBits';
 import ImageUploader from '@/components/ImageUploader';
 
-const COUNTRIES = [{ code: 'NG', name: 'Nigeria', currency: 'NGN' }, { code: 'GB', name: 'United Kingdom', currency: 'GBP' }, { code: 'US', name: 'United States', currency: 'USD' }, { code: 'DE', name: 'Germany', currency: 'EUR' }, { code: 'FR', name: 'France', currency: 'EUR' }, { code: 'IE', name: 'Ireland', currency: 'EUR' }, { code: 'NL', name: 'Netherlands', currency: 'EUR' }];
+const COUNTRIES = [{ code: 'GB', name: 'United Kingdom', currency: 'GBP' }, { code: 'NG', name: 'Nigeria', currency: 'NGN' }, { code: 'US', name: 'United States', currency: 'USD' }, { code: 'DE', name: 'Germany', currency: 'EUR' }, { code: 'FR', name: 'France', currency: 'EUR' }, { code: 'IE', name: 'Ireland', currency: 'EUR' }, { code: 'NL', name: 'Netherlands', currency: 'EUR' }];
 const CURRENCIES = ['NGN', 'USD', 'EUR', 'GBP'];
 
 export default function NewTaskPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ title: '', description: '', mode: 'REMOTE', budgetType: 'FIXED', budgetAmount: '', currency: 'USD', country: 'NG', city: '', categoryId: '' });
+  const [form, setForm] = useState({ title: '', description: '', mode: 'REMOTE', budgetType: 'FIXED', budgetAmount: '', currency: 'GBP', country: 'GB', city: '', categoryId: '' });
   const [categories, setCategories] = useState<any[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

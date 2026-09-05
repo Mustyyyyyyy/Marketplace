@@ -18,19 +18,30 @@ export async function getMyProfile(userId: string) {
 }
 
 export async function updateMyProfile(userId: string, data: { displayName?: string; avatarUrl?: string; bio?: string; country?: string; locale?: string; currency?: string; timezone?: string; }) {
-  const user = await prisma.user.update({
-    where: { id: userId },
-    data: {
-      displayName: data.displayName,
-      avatarUrl: data.avatarUrl,
-      country: data.country,
-      locale: data.locale,
-      currency: data.currency,
-      timezone: data.timezone,
-      ...(data.bio !== undefined ? { customerProfile: { update: { bio: data.bio } } } : {}),
-    },
+  return withRetry(async () => {
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        displayName: data.displayName,
+        avatarUrl: data.avatarUrl,
+        country: data.country,
+        locale: data.locale,
+        currency: data.currency,
+        timezone: data.timezone,
+      },
+    });
+
+    if (data.bio !== undefined) {
+      const customerProfile = await prisma.customerProfile.findUnique({ where: { userId } });
+      if (customerProfile) {
+        await prisma.customerProfile.update({ where: { userId }, data: { bio: data.bio } });
+      } else {
+        const taskerProfile = await prisma.taskerProfile.findUnique({ where: { userId } });
+        if (taskerProfile) await prisma.taskerProfile.update({ where: { userId }, data: { bio: data.bio } });
+      }
+    }
+    return user;
   });
-  return user;
 }
 
 export async function setMyAvatar(userId: string, avatarUrl: string, avatarPublicId?: string) {

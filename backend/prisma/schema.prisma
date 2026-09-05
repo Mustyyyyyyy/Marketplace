@@ -189,7 +189,7 @@ model User {
   twoFactorSecret   String?
   firebaseUid       String?       @unique
   locale            String        @default("en")
-  country           String        @default("NG")
+  country           String        @default("GB")
   timezone          String        @default("Africa/Lagos")
   currency          String        @default("NGN")
   avatarUrl         String?
@@ -388,7 +388,7 @@ model Task {
   preferredAt     DateTime?
   expiresAt       DateTime?
   city            String?
-  country         String     @default("NG")
+  country         String     @default("GB")
   lat             Float?
   lng             Float?
   serviceRadiusKm Int        @default(10)
@@ -662,7 +662,7 @@ model SiteSettings {
   id                    String   @id @default("singleton")
   siteName              String   @default("TaskSphere")
   supportEmail          String   @default("support@tasksphere.app")
-  defaultCountry        String   @default("NG")
+  defaultCountry        String   @default("GB")
   defaultCurrency       String   @default("NGN")
   maintenanceMode       Boolean  @default(false)
   maintenanceMessage    String?

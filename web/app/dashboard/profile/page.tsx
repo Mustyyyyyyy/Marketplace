@@ -6,7 +6,7 @@ import ImageUploader from '@/components/ImageUploader';
 export default function ProfilePage() {
   const [me, setMe] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
-  const [form, setForm] = useState({ displayName: '', country: 'NG', currency: 'USD', locale: 'en', bio: '' });
+  const [form, setForm] = useState({ displayName: '', country: 'GB', currency: 'GBP', locale: 'en', bio: '' });
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarPublicId, setAvatarPublicId] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -19,8 +19,8 @@ export default function ProfilePage() {
       setProfile(j.profile);
       setForm({
         displayName: j.profile.displayName || '',
-        country: j.profile.country || 'NG',
-        currency: j.profile.currency || 'USD',
+        country: j.profile.country || 'GB',
+        currency: j.profile.currency || 'GBP',
         locale: j.profile.locale || 'en',
         bio: j.profile.customerProfile?.bio || j.profile.taskerProfile?.bio || '',
       });
@@ -102,7 +102,7 @@ export default function ProfilePage() {
           <div className="grid grid-cols-3 gap-space-md">
             <label className="block"><span className="font-label-md text-label-md font-semibold">Country</span>
               <select value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} className="mt-1 w-full bg-surface-container-low px-space-md py-space-sm rounded-lg">
-                {['NG', 'GB', 'US', 'DE', 'FR', 'IE', 'NL'].map((c) => <option key={c}>{c}</option>)}
+                {['GB', 'NG', 'US', 'DE', 'FR', 'IE', 'NL'].map((c) => <option key={c}>{c}</option>)}
               </select>
             </label>
             <label className="block"><span className="font-label-md text-label-md font-semibold">Currency</span>

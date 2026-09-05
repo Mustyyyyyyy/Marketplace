@@ -39,7 +39,7 @@ export default function CreateTaskScreen() {
     if (!amt || amt <= 0) { setStep(2); return setErr('Budget must be a positive number'); }
     setLoading(true);
     try {
-      const body: any = { title: title.trim(), description: description.trim(), mode, budgetType, budgetAmount: amt, currency, categoryId: categoryId || undefined, city: city.trim() || undefined, country: 'NG' };
+      const body: any = { title: title.trim(), description: description.trim(), mode, budgetType, budgetAmount: amt, currency, categoryId: categoryId || undefined, city: city.trim() || undefined, country: 'GB' };
       const id = createdId;
       const t: any = id ? await api.patch(`/api/tasks/${id}`, body) : await api.post('/api/tasks', body);
       if (!id) setCreatedId(t.id);
@@ -136,4 +136,3 @@ export default function CreateTaskScreen() {
     </KeyboardAvoidingView>
   );
 }
-

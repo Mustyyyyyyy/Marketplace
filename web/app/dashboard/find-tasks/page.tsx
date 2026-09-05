@@ -41,10 +41,10 @@ export default function FindTasksPage() {
       />
 
       <section className="grid grid-cols-2 md:grid-cols-4 gap-space-md mb-space-xl">
-      <StatCard label="Available now" value={data.total || 0} icon="bolt" tone="info" />
-      <StatCard label="Remote" value={data.items?.filter((t: any) => t.mode === 'REMOTE').length || 0} icon="public" tone="success" />
-      <StatCard label="Local" value={data.items?.filter((t: any) => t.mode === 'LOCAL').length || 0} icon="location_on" tone="neutral" />
-      <StatCard label="Avg. budget" value={data.items?.length ? `${data.items[0].currency || ''} ${Math.round(data.items.reduce((sum: number, t: any) => sum + Number(t.budgetAmount || 0), 0) / data.items.length).toLocaleString()}` : '—'} icon="attach_money" tone="warning" />
+        <StatCard label="Available now" value={data.total || 0} icon="bolt" tone="info" />
+        <StatCard label="Remote" value={data.items?.filter((t: any) => t.mode === 'REMOTE').length || 0} icon="public" tone="success" />
+        <StatCard label="Local" value={data.items?.filter((t: any) => t.mode === 'LOCAL').length || 0} icon="location_on" tone="neutral" />
+        <StatCard label="Avg. budget" value={data.items?.length ? `${data.items[0].currency || ''} ${Math.round(data.items.reduce((sum: number, t: any) => sum + Number(t.budgetAmount || 0), 0) / data.items.length).toLocaleString()}` : '—'} icon="attach_money" tone="warning" />
       </section>
 
       <form onSubmit={(e) => { e.preventDefault(); setPage(1); }} className="p-space-lg rounded-2xl bg-surface-container-lowest shadow-sm mb-space-xl">

@@ -9,9 +9,9 @@ import { login, register, signInWithGoogle, authStore } from '../../lib/auth';
 import { RootStackParamList } from '../../App';
 
 const COUNTRIES = [
-  { code: 'NG', name: 'Nigeria', currency: 'NGN', phone: '+234' },
   { code: 'US', name: 'United States', currency: 'USD', phone: '+1' },
   { code: 'GB', name: 'United Kingdom', currency: 'GBP', phone: '+44' },
+  { code: 'NG', name: 'Nigeria', currency: 'NGN', phone: '+234' },
   { code: 'IE', name: 'Ireland', currency: 'EUR', phone: '+353' },
   { code: 'DE', name: 'Germany', currency: 'EUR', phone: '+49' },
   { code: 'FR', name: 'France', currency: 'EUR', phone: '+33' },
@@ -27,10 +27,10 @@ export default function RegisterScreen() {
   const [role, setRole] = useState<'CUSTOMER' | 'TASKER'>('CUSTOMER');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('+234');
+  const [phone, setPhone] = useState('+44');
   const [password, setPassword] = useState('');
   const [show, setShow] = useState(false);
-  const [country, setCountry] = useState('NG');
+  const [country, setCountry] = useState('GB');
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -133,4 +133,3 @@ function PickerInline({ value, onChange, options }: { value: string; onChange: (
     </View>
   );
 }
-

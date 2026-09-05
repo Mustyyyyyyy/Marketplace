@@ -51,8 +51,14 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     setMenuOpen(false);
     const access = typeof window !== 'undefined' ? localStorage.getItem('access') : null;
     if (!access) { router.push('/sign-in?next=' + encodeURIComponent(path)); return; }
+    const accountRequest = fetch('/api/backend/api/auth/me', { headers: { Authorization: `Bearer ${access}` } }).then(async (response) => {
+      if (response.ok) return response.json();
+      const error = new Error('Unable to load account') as Error & { status?: number };
+      error.status = response.status;
+      throw error;
+    });
     Promise.all([
-      fetch('/api/backend/api/auth/me', { headers: { Authorization: `Bearer ${access}` } }).then((r) => r.ok ? r.json() : Promise.reject()),
+      accountRequest,
       fetch('/api/backend/api/profile/me', { headers: { Authorization: `Bearer ${access}` } }).then((r) => r.ok ? r.json() : null).catch(() => null),
       fetch('/api/backend/api/notifications', { headers: { Authorization: `Bearer ${access}` } }).then((r) => r.ok ? r.json() : null).catch(() => null),
     ])
@@ -62,7 +68,13 @@ export default function DashboardShell({ children }: { children: React.ReactNode
         setUnreadMsgs(m.user?.unreadMessages ?? 0);
         setNotifDot(Boolean(n?.unread));
       })
-      .catch(() => { localStorage.clear(); router.push('/sign-in?next=' + encodeURIComponent(path)); })
+      .catch((error) => {
+        const unauthorized = typeof error === 'object' && error !== null && 'status' in error && error.status === 401;
+        if (unauthorized) {
+          localStorage.removeItem('access');
+          router.push('/sign-in?next=' + encodeURIComponent(path));
+        }
+      })
       .finally(() => setChecking(false));
   }, [path, router]);
 
