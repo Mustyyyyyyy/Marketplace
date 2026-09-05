@@ -8,10 +8,13 @@ from `backend/` through same-domain serverless functions.
 
 1. Import this repository into Vercel.
 2. Leave **Root Directory** set to the repository root (`.`).
-3. Leave the framework as **Next.js**. The root `vercel.json` supplies the
-   install and build commands.
+3. Leave the framework preset unchanged. The root `vercel.json` supplies the
+   install and build commands and disables unreliable framework auto-detection.
 4. Add the environment variables below for Production, Preview, and
    Development as appropriate.
+
+Do not set `NODE_ENV=development` in Vercel. The configured production build
+command explicitly sets `NODE_ENV=production`.
 
 The root configuration:
 

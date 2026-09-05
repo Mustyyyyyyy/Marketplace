@@ -119,7 +119,7 @@ Set these Vercel project environment variables:
 | Framework Preset | Next.js |
 | Root Directory | `.` |
 | Install Command | `npm install --prefix web && npm install --prefix backend && npm run prisma:generate --prefix backend` |
-| Build Command | `npm run build --prefix web` |
+| Build Command | `NODE_ENV=production npm run build --prefix web` |
 | Output Directory | `web/.next` |
 
 Leave Development Command blank. These values are also defined in the root
