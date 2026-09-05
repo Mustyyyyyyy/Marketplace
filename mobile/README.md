@@ -87,7 +87,7 @@ development defaults to `http://10.0.2.2:4000` (Android emulator → host) and
 unified Vercel URL:
 
 ```bash
-EXPO_PUBLIC_API_BASE=https://your-project.vercel.app npx expo start
+EXPO_PUBLIC_API_BASE=https://marketplace-backend-sable.vercel.app npx expo start
 ```
 
 Set the same variable in the EAS build environment before shipping a

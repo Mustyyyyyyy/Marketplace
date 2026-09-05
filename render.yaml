@@ -23,9 +23,9 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: PUBLIC_BASE_URL
-        value: https://tasksphere-web.vercel.app
+        value: https://marketplace-beryl-one.vercel.app
       - key: CORS_ORIGIN
-        value: https://tasksphere-web.vercel.app
+        value: https://marketplace-beryl-one.vercel.app
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT

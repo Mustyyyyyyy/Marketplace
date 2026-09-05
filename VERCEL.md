@@ -53,8 +53,8 @@ Set these in the backend project:
 |---|---|
 | `DATABASE_URL` | Neon/Postgres pooler connection string |
 | `JWT_SECRET` | Long random production secret |
-| `PUBLIC_BASE_URL` | The frontend Vercel URL |
-| `CORS_ORIGIN` | The frontend Vercel URL |
+| `PUBLIC_BASE_URL` | `https://marketplace-beryl-one.vercel.app` |
+| `CORS_ORIGIN` | `https://marketplace-beryl-one.vercel.app` |
 
 For production authentication, uploads, email, and Google sign-in, also set
 the corresponding values from [`backend/.env.example`](C:/Users/HP/Desktop/Marketplace.worktrees/vercel-build-output-directory-fix/backend/.env.example).
