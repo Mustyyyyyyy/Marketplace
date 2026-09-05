@@ -214,6 +214,12 @@ model User {
   sessions          Session[]
   verifications     VerificationToken[]
   kycSubmissions    KycSubmission[]
+  adminNotes        AdminNote[]   @relation("AdminNoteTarget")
+  adminNotesAuthored AdminNote[]  @relation("AdminNoteAuthor")
+  adminPermission   AdminPermission?
+  broadcastsCreated Broadcast[]    @relation("BroadcastCreator")
+  exportsRequested  ExportRequest[] @relation("ExportRequester")
+  marketingPreference MarketingPreference?
   blockedUsers      Block[]       @relation("BlockerRel")
   blockedBy         Block[]       @relation("BlockedRel")
   reportsFiled      Report[]      @relation("ReporterRel")
@@ -643,4 +649,126 @@ model KycSubmission {
 
   @@index([userId, mode])
   @@index([userId, status])
+}
+
+// ============================================================
+// Admin / ops tables
+// ============================================================
+
+// Site-wide settings. Singleton row with id="singleton".
+// We keep this in the DB (not just env vars) so admins can edit it
+// from the web UI without a redeploy.
+model SiteSettings {
+  id                    String   @id @default("singleton")
+  siteName              String   @default("TaskSphere")
+  supportEmail          String   @default("support@tasksphere.app")
+  defaultCountry        String   @default("NG")
+  defaultCurrency       String   @default("NGN")
+  maintenanceMode       Boolean  @default(false)
+  maintenanceMessage    String?
+  kycRequiredFor        String   @default("all") // "all" | "taskers-only" | "off"
+  // JSON map of email domains that can't sign up (e.g. competitor spam)
+  bannedEmailDomains    String   @default("[]")
+  // JSON map of feature flag key → { enabled: bool, value?: any }
+  featureFlags          String   @default("{}")
+  // Free-form contact / legal links shown in the footer
+  termsUrl              String?
+  privacyUrl            String?
+  updatedAt             DateTime @updatedAt
+  updatedBy            String?
+}
+
+// Internal-only note pinned to a user. Visible to every admin/support.
+model AdminNote {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("AdminNoteTarget", fields: [userId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation("AdminNoteAuthor", fields: [authorId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
+  @@index([userId])
+}
+
+// Admin/support invite. Anyone with the token can register as admin.
+model AdminInvite {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  email     String?
+  role      Role     @default(SUPPORT)
+  createdBy String?
+  expiresAt DateTime
+  consumedAt DateTime?
+  consumedBy String?
+  createdAt DateTime @default(now())
+  @@index([token])
+}
+
+// Server-sent broadcast. Can target user segments and multiple channels.
+model Broadcast {
+  id          String   @id @default(cuid())
+  title       String
+  body        String
+  // "all" | "customers" | "taskers" | "kyc-pending" | "by-country"
+  audience    String   @default("all")
+  country     String?  // when audience = "by-country"
+  // JSON: ["in_app","email","push"]
+  channels    String   @default("[\"in_app\"]")
+  status      String   @default("DRAFT") // DRAFT | QUEUED | SENDING | SENT | FAILED
+  sentAt      DateTime?
+  recipientCount Int   @default(0)
+  createdById String?
+  createdBy   User?    @relation("BroadcastCreator", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+// Granular per-admin permission override. Empty permission set = use role default.
+model AdminPermission {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // JSON: ["users:ban","users:impersonate","settings:write","broadcasts:send",…]
+  allow     String   @default("[]")
+  // JSON: list of capability keys to deny
+  deny      String   @default("[]")
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+}
+
+// Per-broadcast per-user delivery tracking.
+model BroadcastReceipt {
+  id          String   @id @default(cuid())
+  broadcastId String
+  userId      String
+  channel     String
+  deliveredAt DateTime?
+  readAt      DateTime?
+  failedReason String?
+  @@unique([broadcastId, userId, channel])
+  @@index([broadcastId])
+}
+
+// Request log for big data exports (audit log dump, user list CSV, etc).
+model ExportRequest {
+  id        String   @id @default(cuid())
+  kind      String   // "audit-log" | "users" | "tasks" | "disputes"
+  format    String   @default("csv") // csv | json
+  status    String   @default("PENDING") // PENDING | RUNNING | READY | FAILED
+  url       String?  // URL to the generated file (Cloudinary or local)
+  rowCount  Int      @default(0)
+  requestedById String
+  requestedBy User   @relation("ExportRequester", fields: [requestedById], references: [id])
+  createdAt DateTime @default(now())
+  completedAt DateTime?
+  error     String?
+}
+
+// Marketing / promotional opt-in flags. Read by auth, written by users + admin.
+model MarketingPreference {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // JSON map of channel → boolean. Default everything off; user opts in.
+  channels  String   @default("{}")
+  updatedAt DateTime @updatedAt
 }

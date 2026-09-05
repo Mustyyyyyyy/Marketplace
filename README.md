@@ -130,17 +130,20 @@ The backend is a regular Node.js app, so any Node host works. Two of the easiest
 ### Step 2 — Deploy the web app to Vercel
 
 1. Go to [vercel.com/new](https://vercel.com/new) and import the repo.
-2. The root `vercel.json` already tells Vercel this is a monorepo: it builds `web/` and rewrites `/api/backend/*` to your backend. **No need to set the Root Directory.**
-3. Add the env var:
+2. In **Project Settings → General → Root Directory** click **Edit** and set it to `web`. Click **Save**.
+3. Vercel auto-detects Next.js. Click **Deploy** — that's it. The included `web/vercel.json` adds the security headers, image caching, and the `/api/backend/*` rewrite to your deployed backend.
+4. In **Project Settings → Environment Variables** add:
    - `NEXT_PUBLIC_API_BASE` = `https://tasksphere-api.onrender.com`
-4. Open the deployed URL. Done.
+5. Open the deployed URL. Done.
 
-#### What's in `vercel.json`?
+> **Troubleshooting:** if the build fails with `Error: spawn npm ENOENT` or `Build machine configuration`, the most common cause is Vercel falling back to the legacy `builds` system. To force the modern system: make sure there's **no** `builds` array in the root `vercel.json`, and that `Root Directory` is set to `web` in the project settings. (The current root `vercel.json` is intentionally a tiny `$schema`-only shim so it can't trigger this.)
+
+#### What's in the Vercel config?
 
 | File | Purpose |
 |---|---|
-| `vercel.json` (root) | Vercel monorepo config: builds the `web/` sub-project and rewrites `/api/backend/*` to the backend. |
-| `web/vercel.json` | Next.js-specific config: cache headers, security headers, image caching. |
+| `vercel.json` (root) | Tiny shim (`$schema` only). The real config is in `web/vercel.json`. |
+| `web/vercel.json` | Next.js-specific config: rewrites, security headers, image caching. |
 
 #### Why the `/api/backend/*` rewrite?
 
