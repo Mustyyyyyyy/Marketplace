@@ -144,7 +144,10 @@ function PostAuthNav() {
 }
 
 const linking: LinkingOptions<RootStackParamList> = {
-  prefixes: ['marketplace://', 'https://app.tasksphere.app', 'http://localhost'],
+  prefixes: [
+    'marketplace://',
+    process.env.EXPO_PUBLIC_APP_URL || 'http://localhost',
+  ],
   config: {
     screens: {
       ResetPassword: 'auth/reset-password',

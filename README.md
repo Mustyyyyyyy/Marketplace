@@ -15,7 +15,7 @@ mobile/     Expo SDK 51 + React Native + Socket.IO client
 - **🖼️ Image uploads** via Cloudinary (avatars, portfolio, task media, chat attachments, KYC documents). Drag/drop on web, `expo-image-picker` on mobile.
 - **💬 Real-time chat** with Socket.IO + email notifications, with a polling fallback for serverless deployments.
 - **📱 Mobile deep links** for password reset and OAuth callbacks.
-- **🚀 One-click deploy** with Vercel for the web, Render Blueprint for the backend.
+- **🚀 One-project Vercel deploy** for the web and backend, plus Expo/EAS for mobile.
 
 ## Quick start
 
@@ -32,7 +32,7 @@ npm run dev                   # http://localhost:4000
 ### 2. Web
 ```bash
 cd web
-cp .env.example .env.local    # fill in BACKEND_INTERNAL_URL + NEXT_PUBLIC_API_BASE
+cp .env.example .env.local    # optional local backend URL overrides
 npm install
 npm run dev                   # http://localhost:3000
 ```
@@ -98,21 +98,40 @@ The verification rules live in [`backend/src/services/kycRules.ts`](backend/src/
 
 ## Deploying to production
 
-## Live URLs
+### Unified Vercel deployment
 
-| App | URL |
+Create one Vercel project for the repository with **Root Directory** set to
+`.`. The root `vercel.json` installs both applications, generates Prisma,
+builds `web/.next`, and exposes the backend at `/api/backend/*` on the same
+domain. The `/health` endpoint is available for deployment checks.
+
+Set these Vercel project environment variables:
+
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `PUBLIC_BASE_URL` — your Vercel URL
+- `CORS_ORIGIN` — your Vercel URL
+- Optional production values from `backend/.env.example` for SMTP,
+  Cloudinary, Firebase, Google OAuth, and admin bootstrap.
+
+| Vercel field | Value |
 |---|---|
-| Web (Next.js) | https://marketplace-khaki-ten.vercel.app |
-| Backend (Vercel Function) | https://marketplace-api.vercel.app |
+| Framework Preset | Next.js |
+| Root Directory | `.` |
+| Install Command | `npm install --prefix web && npm install --prefix backend && npm run prisma:generate --prefix backend` |
+| Build Command | `npm run build --prefix web` |
+| Output Directory | `web/.next` |
 
-## Architecture
+Leave Development Command blank. These values are also defined in the root
+`vercel.json`.
+
+### Architecture
 
 ```
 ┌─────────────────────┐         ┌──────────────────────┐
-│  Vercel (web)       │  /api/* │  Vercel (backend)    │
-│  Next.js 14         │ ───────▶│  Express as Function │
-│  marketplace-       │         │  marketplace-        │
-│  khaki-ten          │         │  api.vercel.app      │
+│  Vercel (one project)          │
+│  Next.js 14 + Express Function │
+│  same-origin /api/backend/*   │
 └─────────────────────┘         └──────────────────────┘
                                        │
                                        ▼
@@ -123,41 +142,25 @@ The verification rules live in [`backend/src/services/kycRules.ts`](backend/src/
                                └──────────────────┘
 ```
 
-> **Why two Vercel projects?** Vercel is the best place to host a Next.js app, and we can also run the Express backend as a Vercel Function in a separate project pointing at the `backend/` sub-folder. The downside: Vercel serverless functions don't support long-lived WebSocket connections, so the real-time chat (Socket.IO) falls back to polling. If you need true real-time, deploy the backend to Render, Fly.io, or Railway instead — `render.yaml` is included.
-
-### Step 1 — Deploy the backend
-
-The backend is a regular Node.js app wrapped as a Vercel Function. To deploy it as a second Vercel project:
-
-1. Go to [vercel.com/new](https://vercel.com/new) → **Import** the same GitHub repo again.
-2. When prompted for **Root Directory**, click **Edit** and select `backend`. Click **Save**.
-3. In **Environment Variables**, add the variables from `backend/.env.example`. The required ones are listed at the top of `VERCEL.md`.
-4. Click **Deploy**. Once it's live, copy the URL — e.g. `https://marketplace-api.vercel.app`. You'll use this in step 2.
-
-> If you'd rather host the backend on Render, see the older "Render" instructions further down — `render.yaml` is still included.
-
-### Step 2 — Deploy the web app to Vercel
-
-1. Go to [vercel.com/new](https://vercel.com/new) and import the repo.
-2. The root `vercel.json` already sets `rootDirectory: "web"`, so Vercel builds the Next.js app automatically. If the project was imported before this commit, open **Project Settings → General → Root Directory** and set it to `web` manually.
-3. In **Project Settings → Environment Variables** add:
-   - `NEXT_PUBLIC_API_BASE` = `https://marketplace-api.vercel.app`
-4. Open the deployed URL. Done.
-
-> **Troubleshooting:** if the build fails with `Error: spawn npm ENOENT` or `Build machine configuration`, Vercel is falling back to the legacy `builds` system. Make sure the root `vercel.json` has no `builds` array (it doesn't) and that `Root Directory` is set to `web`.
+> Vercel serverless functions don't support long-lived WebSocket connections,
+> so chat uses its polling fallback on this deployment. For persistent
+> Socket.IO connections, use the included `render.yaml` or another long-lived
+> backend host.
 
 #### What's in the Vercel config?
 
 | File | Purpose |
 |---|---|
-| `vercel.json` (root) | Pins `rootDirectory: "web"`. |
-| `web/vercel.json` | Next.js-specific config: rewrites, security headers, image caching. |
-| `backend/vercel.json` | Tells Vercel to run the Express app as a Function. |
-| `backend/api/index.ts` | The Vercel Function entry that wraps the Express app. |
+| `vercel.json` | Unified install, build, routing, headers, and function settings. |
+| `api/[...path].ts` | Same-domain Express Function entry point. |
+| `api/health.ts` | Deployment health endpoint. |
 
 #### Why the `/api/backend/*` rewrite?
 
-The web app's API client always calls relative paths like `fetch('/api/backend/api/tasks')`. The Vercel rewrite forwards those to `https://marketplace-api.vercel.app/api/tasks`. In dev, `next.config.mjs` does the same forwarding to `http://localhost:4000`. This means **no environment-specific code** in the React components.
+The web app's API client calls relative paths like
+`fetch('/api/backend/api/tasks')`. Vercel forwards those to the same-domain
+Express Function. In local development, `next.config.mjs` forwards them to
+`http://localhost:4000`.
 
 ### Step 3 — Build the mobile app
 
@@ -176,28 +179,29 @@ eas submit --platform android
 eas submit --platform ios
 ```
 
-The mobile app reads the API base from `app.json` → `extra.apiBaseUrl`. Update that to `https://marketplace-api.vercel.app` before shipping a production build.
+The mobile app reads `EXPO_PUBLIC_API_BASE` for production builds. Set it to
+the same Vercel URL before running an EAS build.
 
 ## Verifying the deployment
 
 ```bash
 # Web app
-open https://marketplace-khaki-ten.vercel.app
+open https://your-project.vercel.app
 
 # Backend health
-curl https://marketplace-api.vercel.app/health
+curl https://your-project.vercel.app/health
 
 # Public stats (no auth)
-curl https://marketplace-api.vercel.app/api/public/stats
+curl https://your-project.vercel.app/api/public/stats
 
 # Country-aware KYC requirements
-curl "https://marketplace-api.vercel.app/api/auth/kyc/requirements?country=NG&role=CUSTOMER"
+curl "https://your-project.vercel.app/api/auth/kyc/requirements?country=NG&role=CUSTOMER"
 
 # Supported countries
-curl https://marketplace-api.vercel.app/api/auth/kyc/countries
+curl https://your-project.vercel.app/api/auth/kyc/countries
 
 # Web sign-in
-open https://marketplace-khaki-ten.vercel.app/sign-in
+open https://your-project.vercel.app/sign-in
 ```
 
 ## Known limitations
