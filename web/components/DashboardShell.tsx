@@ -99,7 +99,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
               {liveNav.map((n) => {
                 const active = isActive(n.href);
                 return (
-                  <Link key={n.href} href={n.href} className={`flex items-center justify-between px-space-sm py-space-xs rounded-xl transition-all group ${active ? 'bg-primary-container text-on-secondary-container font-label-lg' : 'font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'}`}>
+                  <Link key={n.href} href={n.href} onClick={() => setMenuOpen(false)} className={`flex items-center justify-between px-space-sm py-space-xs rounded-xl transition-all group ${active ? 'bg-primary-container text-on-secondary-container font-label-lg' : 'font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'}`}>
                     <div className="flex items-center gap-space-sm">
                       <span className={`material-symbols-outlined transition-colors text-[20px] ${active ? 'text-on-secondary-container' : 'text-outline group-hover:text-on-surface'}`}>{n.icon}</span>
                       <span>{n.label}</span>
@@ -117,7 +117,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
           <div className="mb-space-2xs px-space-xs text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">Support &amp; System</div>
           <nav className="flex flex-col gap-space-2xs">
             {SUPPORT_NAV.map((n) => (
-              <Link key={n.label} href={n.href} onClick={(e) => { if (n.label === 'Log Out') { e.preventDefault(); signOut(); } }} className={`flex items-center gap-space-sm px-space-sm py-space-xs rounded-xl font-label-lg text-label-lg transition-all group ${n.label === 'Log Out' ? 'text-error hover:bg-error-container hover:text-on-error-container' : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'}`}>
+              <Link key={n.label} href={n.href} onClick={(e) => { setMenuOpen(false); if (n.label === 'Log Out') { e.preventDefault(); signOut(); } }} className={`flex items-center gap-space-sm px-space-sm py-space-xs rounded-xl font-label-lg text-label-lg transition-all group ${n.label === 'Log Out' ? 'text-error hover:bg-error-container hover:text-on-error-container' : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'}`}>
                 <span className={`material-symbols-outlined transition-colors text-[20px] ${n.label === 'Log Out' ? 'text-error' : 'text-outline group-hover:text-on-surface'}`}>{n.icon}</span>
                 <span>{n.label}</span>
               </Link>
