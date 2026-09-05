@@ -1,0 +1,101 @@
+# Root .gitignore — covers everything not already excluded by the
+# per-subproject .gitignore files (backend/.gitignore, web/.gitignore,
+# mobile/.gitignore).
+
+# ---------- OS junk ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+*.lnk
+
+# ---------- Editors / IDEs ----------
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+*~
+.fleet
+.cursor/
+
+# ---------- Logs ----------
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.tsbuildinfo
+*.tsbuildinfo
+
+# ---------- Env / secrets (NEVER commit) ----------
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+backend/.env
+backend/.env.*
+!backend/.env.example
+web/.env.local
+web/.env.*.local
+!web/.env.example
+mobile/.env
+mobile/.env.*
+!mobile/.env.example
+
+# ---------- Build outputs ----------
+node_modules/
+.next/
+.next-standalone/
+out/
+dist/
+build/
+.turbo/
+.cache/
+.parcel-cache/
+.expo/
+.expo-shared/
+*.tsbuildinfo
+
+# ---------- Backend ----------
+backend/uploads/
+backend/dist/
+backend/coverage/
+backend/prisma/migrations/dev/
+backend/.envrc
+
+# ---------- Mobile ----------
+mobile/.expo/
+mobile/android/build/
+mobile/android/app/build/
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/android/app/google-services.json
+mobile/ios/build/
+mobile/ios/Pods/
+mobile/ios/*.xcworkspace/xcuserdata/
+mobile/ios/**/xcuserdata/
+mobile/ios/**/DerivedData/
+
+# ---------- Coverage / testing ----------
+coverage/
+.nyc_output/
+*.lcov
+.nyc_output
+
+# ---------- Prisma generated client (rebuilt on `prisma generate`) ----------
+backend/src/generated/
+backend/node_modules/.prisma/
+
+# ---------- Misc ----------
+*.tgz
+*.tar.gz
+*.zip
+*.bak
+*.tmp
+.cache/
+.tmp/
+.pnp.*

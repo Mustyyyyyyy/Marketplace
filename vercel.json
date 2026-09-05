@@ -1,0 +1,32 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+  "name": "task-sphere-monorepo",
+  "framework": null,
+  "installCommand": "echo 'monorepo: skipping global install'",
+  "buildCommand": "echo 'handled by per-app builds below'",
+  "builds": [
+    {
+      "src": "web/package.json",
+      "use": "@vercel/next",
+      "config": {
+        "rootDirectory": "web",
+        "distDir": ".next",
+        "buildCommand": "next build"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/backend/(.*)",
+      "dest": "https://api.YOUR-BACKEND-HOST.com/api/$1"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/web/$1"
+    }
+  ]
+}

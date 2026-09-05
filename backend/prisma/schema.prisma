@@ -1,0 +1,646 @@
+// Prisma schema for global task marketplace
+// SQLite for local dev; switch provider to "postgresql" + DATABASE_URL for prod.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  TASKER
+  ADMIN
+  SUPPORT
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING_VERIFICATION
+  BANNED
+}
+
+enum TaskStatus {
+  DRAFT
+  PUBLISHED
+  RECEIVING_OFFERS
+  OFFER_SELECTED
+  ACCEPTED
+  IN_PROGRESS
+  SUBMITTED
+  CUSTOMER_REVIEW
+  COMPLETED
+  CANCELLED
+  EXPIRED
+  DISPUTED
+  SUSPENDED
+}
+
+enum TaskMode {
+  LOCAL
+  REMOTE
+}
+
+enum BudgetType {
+  FIXED
+  HOURLY
+}
+
+enum OfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+  EXPIRED
+}
+
+enum HireStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  DISPUTED
+}
+
+enum MessageReportStatus {
+  OPEN
+  REVIEWED
+  ACTIONED
+  DISMISSED
+}
+
+enum ReportTargetType {
+  USER
+  TASK
+  MESSAGE
+  REVIEW
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED_CUSTOMER
+  RESOLVED_TASKER
+  RESOLVED_SPLIT
+  CLOSED
+  ESCALATED
+}
+
+enum KycStatus {
+  NOT_STARTED
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+// Where the user is in the signup / KYC funnel.
+// PROFILE  = step 1 done (account created), KYC not done
+// KYC      = KYC submitted, awaiting review
+// COMPLETE = KYC approved, full access
+enum SignupStep {
+  PROFILE
+  KYC
+  COMPLETE
+}
+
+// Country-specific identifier types. The schema is country-agnostic; the
+// rules engine maps each (country, role) to the modes that user must complete.
+enum KycMode {
+  // Photo / scan of a government-issued ID document
+  ID_DOCUMENT
+  // Government-issued national ID number
+  NATIONAL_ID_NUMBER
+  // Personal / taxpayer ID number (e.g. US SSN, EU codice fiscale, SA ID)
+  TAX_ID
+  // Bank-grade identity verification
+  BANK_VERIFICATION
+  // Official address proof (utility bill, bank statement)
+  ADDRESS_PROOF
+  // Government-issued driver licence
+  DRIVER_LICENSE
+  // Government-issued passport
+  PASSPORT
+  // Phone OTP verification
+  PHONE_OTP
+  // Email verification link
+  EMAIL_OTP
+  // Liveness selfie (smile, blink, turn head)
+  SELFIE
+  // Sanctions / PEP database check (read-only)
+  SANCTIONS_SCREEN
+}
+
+enum KycSubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  SMS
+  PUSH
+}
+
+enum RiskEventType {
+  LOGIN_ANOMALY
+  MULTI_ACCOUNT
+  SPAM_BURST
+  REVIEW_MANIPULATION
+  PAYMENT_ANOMALY
+  SUSPICIOUS_TEXT
+  ACCOUNT_TAKEOVER
+  OTHER
+}
+
+enum MediaKind {
+  IMAGE
+  VIDEO
+  FILE
+}
+
+enum ConversationKind {
+  TASK
+  DIRECT
+}
+
+enum VerificationKind {
+  EMAIL
+  PHONE
+  KYC
+  TWOFA
+}
+
+model User {
+  id                String        @id @default(cuid())
+  email             String        @unique
+  phone             String?       @unique
+  passwordHash      String
+  role              Role          @default(CUSTOMER)
+  status            UserStatus    @default(PENDING_VERIFICATION)
+  emailVerified     Boolean       @default(false)
+  phoneVerified     Boolean       @default(false)
+  twoFactorEnabled  Boolean       @default(false)
+  twoFactorSecret   String?
+  firebaseUid       String?       @unique
+  locale            String        @default("en")
+  country           String        @default("NG")
+  timezone          String        @default("Africa/Lagos")
+  currency          String        @default("NGN")
+  avatarUrl         String?
+  avatarPublicId    String?
+  displayName       String?
+  // Signup funnel tracking
+  signupStep        SignupStep    @default(PROFILE)
+  // User-level KYC (applies to both CUSTOMER and TASKER)
+  kycStatus         KycStatus     @default(NOT_STARTED)
+  kycCountry        String?       // ISO-2 country at the time of submission
+  kycSubmittedAt    DateTime?
+  kycApprovedAt     DateTime?
+  kycRejectedReason String?
+  kycNotes          String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  lastLoginAt       DateTime?
+  riskScore         Int           @default(0)
+
+  customerProfile   CustomerProfile?
+  taskerProfile     TaskerProfile?
+  sessions          Session[]
+  verifications     VerificationToken[]
+  kycSubmissions    KycSubmission[]
+  blockedUsers      Block[]       @relation("BlockerRel")
+  blockedBy         Block[]       @relation("BlockedRel")
+  reportsFiled      Report[]      @relation("ReporterRel")
+  reportsAgainst    Report[]      @relation("TargetUserRel")
+  notifications     Notification[]
+  preferences       NotificationPreference[]
+  auditLogs         AuditLog[]
+  riskEvents        RiskEvent[]
+  uploadedMedia     Media[]
+  conversationsA    Conversation[] @relation("ConvUserA")
+  conversationsB    Conversation[] @relation("ConvUserB")
+  messages          Message[]
+  messageReports    MessageReport[]
+  reviewsWritten   Review[]       @relation("ReviewAuthor")
+  reviewsReceived  Review[]       @relation("ReviewTarget")
+  disputesOpened   Dispute[]      @relation("DisputeOpener")
+  disputesAgainst  Dispute[]      @relation("DisputeAgainst")
+  tasks             Task[]        @relation("TaskCustomer")
+  offers            Offer[]
+  hiresAsTasker     Hire[]        @relation("HireTasker")
+  hiredAsCustomer   Hire[]        @relation("HireCustomer")
+  loginLogs         LoginLog[]
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshToken String   @unique
+  userAgent    String?
+  ip           String?
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+  revokedAt    DateTime?
+}
+
+model LoginLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  email     String
+  success   Boolean
+  ip        String?
+  userAgent String?
+  reason    String?
+  createdAt DateTime @default(now())
+}
+
+model VerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      VerificationKind
+  tokenHash String   @unique
+  expiresAt DateTime
+  consumedAt DateTime?
+  createdAt DateTime @default(now())
+}
+
+model CustomerProfile {
+  id          String  @id @default(cuid())
+  userId      String  @unique
+  user        User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio         String?
+  preferences String? // JSON string of preferences
+  ratingAvg   Float   @default(0)
+  ratingCount Int     @default(0)
+}
+
+model TaskerProfile {
+  id              String  @id @default(cuid())
+  userId          String  @unique
+  user            User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio             String?
+  headline        String?
+  experienceYears Int     @default(0)
+  travelRadiusKm  Int     @default(10)
+  remoteOk        Boolean @default(false)
+  kycStatus       KycStatus @default(NOT_STARTED)
+  kycNotes        String?
+  ratingAvg       Float   @default(0)
+  ratingCount     Int     @default(0)
+  completionCount Int     @default(0)
+  responseRate    Float   @default(0)
+  completedCount  Int     @default(0)
+
+  skills          TaskerSkill[]
+  certifications  Certification[]
+  portfolioItems  PortfolioItem[]
+  availability    AvailabilityWindow[]
+}
+
+model Skill {
+  id        String @id @default(cuid())
+  name      String @unique
+  taskers   TaskerSkill[]
+  categoryId String?
+  category  Category? @relation(fields: [categoryId], references: [id])
+}
+
+model TaskerSkill {
+  taskerProfileId String
+  skillId         String
+  tasker          TaskerProfile @relation(fields: [taskerProfileId], references: [id], onDelete: Cascade)
+  skill           Skill         @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  @@id([taskerProfileId, skillId])
+}
+
+model Certification {
+  id              String @id @default(cuid())
+  taskerProfileId String
+  tasker          TaskerProfile @relation(fields: [taskerProfileId], references: [id], onDelete: Cascade)
+  title           String
+  issuer          String?
+  issuedAt        DateTime?
+  expiresAt      DateTime?
+  documentUrl    String?
+  verified       Boolean @default(false)
+}
+
+model PortfolioItem {
+  id              String @id @default(cuid())
+  taskerProfileId String
+  tasker          TaskerProfile @relation(fields: [taskerProfileId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  mediaUrl        String?
+  createdAt       DateTime @default(now())
+}
+
+model AvailabilityWindow {
+  id              String @id @default(cuid())
+  taskerProfileId String
+  tasker          TaskerProfile @relation(fields: [taskerProfileId], references: [id], onDelete: Cascade)
+  weekday         Int
+  startMinute     Int
+  endMinute       Int
+}
+
+model Category {
+  id           String  @id @default(cuid())
+  slug         String  @unique
+  name         String
+  icon         String?
+  parentId     String?
+  parent       Category? @relation("CategoryParent", fields: [parentId], references: [id])
+  children     Category[] @relation("CategoryParent")
+  skills       Skill[]
+  tasks        Task[]
+  active       Boolean @default(true)
+}
+
+model Task {
+  id              String     @id @default(cuid())
+  customerId      String
+  customer        User       @relation("TaskCustomer", fields: [customerId], references: [id])
+  categoryId      String?
+  category        Category?  @relation(fields: [categoryId], references: [id])
+  title           String
+  description     String
+  status          TaskStatus  @default(DRAFT)
+  mode            TaskMode   @default(LOCAL)
+  budgetType      BudgetType @default(FIXED)
+  budgetAmount    Float
+  currency        String     @default("NGN")
+  preferredAt     DateTime?
+  expiresAt       DateTime?
+  city            String?
+  country         String     @default("NG")
+  lat             Float?
+  lng             Float?
+  serviceRadiusKm Int        @default(10)
+  cityArea        String?    // optional region label
+  completionEvidence String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  media           TaskMedia[]
+  offers          Offer[]
+  hires           Hire[]
+  conversation    Conversation?
+  reports         Report[]
+  review          Review?
+  dispute         Dispute?
+
+  @@index([status, mode])
+  @@index([customerId])
+  @@index([categoryId])
+}
+
+model TaskMedia {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  url       String
+  kind      MediaKind @default(IMAGE)
+  createdAt DateTime @default(now())
+}
+
+model Media {
+  id        String   @id @default(cuid())
+  uploaderId String
+  uploader  User     @relation(fields: [uploaderId], references: [id])
+  url       String
+  kind      MediaKind @default(IMAGE)
+  createdAt DateTime @default(now())
+}
+
+model Offer {
+  id           String      @id @default(cuid())
+  taskId       String
+  task         Task        @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskerId     String
+  tasker       User        @relation(fields: [taskerId], references: [id])
+  price        Float
+  currency     String      @default("NGN")
+  timelineDays Int
+  proposal     String
+  experience   String?
+  createdAt    DateTime    @default(now())
+  status       OfferStatus @default(PENDING)
+
+  @@index([taskId, status])
+  @@index([taskerId])
+}
+
+model Hire {
+  id         String      @id @default(cuid())
+  taskId     String
+  task       Task    @relation(fields: [taskId], references: [id])
+  taskerId   String
+  tasker     User    @relation("HireTasker", fields: [taskerId], references: [id])
+  customerId String
+  customer   User    @relation("HireCustomer", fields: [customerId], references: [id])
+  offerId    String?     @unique
+  status     HireStatus  @default(ACTIVE)
+  startedAt  DateTime?
+  submittedAt DateTime?
+  completedAt DateTime?
+  createdAt  DateTime    @default(now())
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  taskId    String?  @unique
+  task      Task?    @relation(fields: [taskId], references: [id])
+  userAId   String
+  userA     User     @relation("ConvUserA", fields: [userAId], references: [id])
+  userBId   String
+  userB     User     @relation("ConvUserB", fields: [userBId], references: [id])
+  kind      ConversationKind @default(TASK)
+  createdAt DateTime @default(now())
+  messages  Message[]
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User  @relation(fields: [senderId], references: [id])
+  body           String
+  attachmentUrl  String?
+  readAt         DateTime?
+  createdAt      DateTime @default(now())
+
+  reports        MessageReport[]
+}
+
+model MessageReport {
+  id        String   @id @default(cuid())
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  reporterId String
+  reporter  User  @relation(fields: [reporterId], references: [id])
+  reason    String
+  details   String?
+  status    MessageReportStatus @default(OPEN)
+  createdAt DateTime @default(now())
+}
+
+model Block {
+  id        String   @id @default(cuid())
+  blockerId String
+  blocker   User  @relation("BlockerRel", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId String
+  blocked   User  @relation("BlockedRel", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@unique([blockerId, blockedId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel   NotificationChannel @default(IN_APP)
+  type      String
+  title     String
+  body      String
+  data      String?  // JSON
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+  @@index([userId, readAt])
+}
+
+model NotificationPreference {
+  id     String @id @default(cuid())
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type   String
+  email  Boolean @default(true)
+  sms    Boolean @default(false)
+  push   Boolean @default(true)
+  inApp  Boolean @default(true)
+  @@unique([userId, type])
+}
+
+model Review {
+  id          String   @id @default(cuid())
+  taskId      String   @unique
+  task        Task     @relation(fields: [taskId], references: [id])
+  authorId    String
+  author      User     @relation("ReviewAuthor", fields: [authorId], references: [id])
+  targetId    String
+  target      User     @relation("ReviewTarget", fields: [targetId], references: [id])
+  rating      Int
+  body        String
+  createdAt    DateTime @default(now())
+  verified    Boolean @default(false)
+  flagged     Boolean @default(false)
+  moderated   Boolean @default(false)
+}
+
+model Dispute {
+  id          String   @id @default(cuid())
+  taskId      String   @unique
+  task        Task     @relation(fields: [taskId], references: [id])
+  openerId    String
+  opener      User     @relation("DisputeOpener", fields: [openerId], references: [id])
+  againstId   String
+  against     User     @relation("DisputeAgainst", fields: [againstId], references: [id])
+  reason      String
+  details     String
+  status      DisputeStatus @default(OPEN)
+  resolution  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Report {
+  id        String   @id @default(cuid())
+  reporterId String
+  reporter  User     @relation("ReporterRel", fields: [reporterId], references: [id])
+  targetType ReportTargetType
+  targetId   String
+  targetUserId String?
+  targetUser User? @relation("TargetUserRel", fields: [targetUserId], references: [id])
+  taskId    String?
+  task      Task?    @relation(fields: [taskId], references: [id])
+  reason    String
+  details   String?
+  createdAt DateTime @default(now())
+}
+
+model RiskEvent {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?  @relation(fields: [userId], references: [id])
+  type      RiskEventType
+  score     Int     @default(0)
+  details   String?
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User? @relation(fields: [actorId], references: [id])
+  action    String
+  target    String?
+  metadata  String?
+  ip        String?
+  createdAt DateTime @default(now())
+  @@index([actorId, action])
+}
+
+// Catalog of KYC requirements per (country, role). Seeded at startup
+// from the rules engine; users can read the active set via /api/auth/kyc/requirements.
+model KycRequirement {
+  id        String   @id @default(cuid())
+  country   String   // ISO-2: "NG", "US", "GB", "DE", ...
+  role      Role     // CUSTOMER or TASKER (KYC requirements differ)
+  mode      KycMode
+  label     String   // human-readable name
+  helpText  String?  // shown to the user as a hint
+  required  Boolean  @default(true)
+  order     Int      @default(0)
+  // Optional regex / length rule enforced by the API
+  pattern   String?
+  minLength Int?
+  maxLength Int?
+  // Whether this mode requires a file upload (e.g. ID_DOCUMENT, ADDRESS_PROOF)
+  fileBased Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([country, role, mode])
+  @@index([country, role])
+}
+
+// Each individual attempt a user makes to complete a KYC requirement.
+model KycSubmission {
+  id        String              @id @default(cuid())
+  userId    String
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mode      KycMode
+  // The submitted value. For text modes (NATIONAL_ID_NUMBER, TAX_ID) this is
+  // the raw value. For file modes (ID_DOCUMENT, ADDRESS_PROOF) this is the
+  // Cloudinary URL. For OTP modes it's the verified flag + verifiedAt.
+  value     String?
+  fileUrl   String?
+  filePublicId String?
+  status    KycSubmissionStatus @default(PENDING)
+  notes     String?
+  submittedAt DateTime          @default(now())
+  reviewedAt  DateTime?
+  reviewedBy  String?
+
+  @@index([userId, mode])
+  @@index([userId, status])
+}

@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "Marketplace",
+    "slug": "marketplace",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "scheme": "marketplace",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#4F46E5"
+    },
+    "ios": { "supportsTablet": true, "bundleIdentifier": "com.marketplace.app" },
+    "android": { "package": "com.marketplace.app", "adaptiveIcon": { "backgroundColor": "#4F46E5" } },
+    "web": { "bundler": "metro" },
+    "plugins": ["expo-secure-store"],
+    "extra": {
+      "apiBaseUrl": "http://10.0.2.2:4000",
+      "apiBaseUrlWeb": "http://localhost:4000"
+    }
+  }
+}
