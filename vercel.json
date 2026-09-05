@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nextjs",
+  "framework": null,
   "installCommand": "npm install --prefix web && npm install --prefix backend && npm run prisma:generate --prefix backend",
   "buildCommand": "npm run build --prefix web",
   "outputDirectory": "web/.next",
