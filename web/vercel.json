@@ -1,12 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "rewrites": [
-    {
-      "source": "/api/backend/:path*",
-      "destination": "https://marketplace-2wmu41owh-adebayos-projects-1eb7ca4e.vercel.app/api/:path*"
-    }
-  ],
   "headers": [
     {
       "source": "/(.*)",

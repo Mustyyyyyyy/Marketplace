@@ -1,16 +1,42 @@
 # Deploying the monorepo to Vercel
 
-The repository supports either one unified Vercel project or two Vercel
-projects. The current production setup uses the backend deployment at
-`https://marketplace-2wmu41owh-adebayos-projects-1eb7ca4e.vercel.app` and the
-Next.js frontend from `web/`.
+The repository supports two Vercel projects: one for the backend and one for
+the Next.js frontend. This is the recommended deployment because each project
+has a clear Root Directory and the frontend can point to the backend URL using
+environment variables.
 
 ## Vercel project settings
 
-1. Import this repository into Vercel.
-2. Set **Root Directory** to `web` for the frontend project.
-3. Use the **Next.js** framework preset. `web/vercel.json` supplies the
-   backend rewrite and security headers.
+Create two Vercel projects from the same GitHub repository.
+
+### Backend project
+
+| Field | Value |
+|---|---|
+| Project name | `marketplace-backend` |
+| Root Directory | `backend` |
+| Framework Preset | Other |
+| Install Command | `npm install && npm run prisma:generate` |
+| Build Command | Leave blank |
+| Output Directory | Leave blank |
+| Development Command | Leave blank |
+
+`backend/vercel.json` supplies the serverless function and route rewrite.
+
+### Frontend project
+
+| Field | Value |
+|---|---|
+| Project name | `marketplace-web` |
+| Root Directory | `web` |
+| Framework Preset | Next.js |
+| Install Command | `npm install` |
+| Build Command | `npm run build` |
+| Output Directory | `.next` |
+| Development Command | Leave blank |
+
+`web/vercel.json` supplies security headers, while `web/next.config.mjs`
+uses the backend environment variable for API rewrites.
 4. Add the environment variables below for Production, Preview, and
    Development as appropriate.
 
@@ -21,7 +47,7 @@ The backend project should use Root Directory `backend` and expose `/health`.
 
 ## Required environment variables
 
-Set these in the single Vercel project:
+Set these in the backend project:
 
 | Variable | Value |
 |---|---|
@@ -33,21 +59,27 @@ Set these in the single Vercel project:
 For production authentication, uploads, email, and Google sign-in, also set
 the corresponding values from [`backend/.env.example`](C:/Users/HP/Desktop/Marketplace.worktrees/vercel-build-output-directory-fix/backend/.env.example).
 
-Set `NEXT_PUBLIC_API_BASE` and `BACKEND_INTERNAL_URL` on the frontend project
-to the backend URL above. The checked-in fallback also points there, but
-environment variables are preferred for custom domains.
+Set these in the frontend project:
+
+| Variable | Value |
+|---|---|
+| `NEXT_PUBLIC_API_BASE` | Backend project URL, ending without `/` |
+| `BACKEND_INTERNAL_URL` | Same backend project URL |
+
+Do not add `NODE_ENV=development`. Vercel sets production mode for production
+deployments.
 
 ## Verification
 
 After deployment, check:
 
 ```text
-https://marketplace-2wmu41owh-adebayos-projects-1eb7ca4e.vercel.app/health
+https://your-backend-project.vercel.app/health
 ```
 
 The expected response is JSON containing `"ok": true`.
 
-Frontend requests use `/api/backend/...`; Vercel rewrites those requests to
+Frontend requests use `/api/backend/...`; Next.js rewrites those requests to
 the backend deployment while preserving the backend's `/api/...` route structure.
 
 ## Local development
