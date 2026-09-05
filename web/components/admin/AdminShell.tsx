@@ -89,15 +89,15 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
   const caps = new Set(ctx.capabilities);
   return (
-    <div className="min-h-screen flex bg-surface text-on-surface">
-      <aside className="w-64 shrink-0 bg-surface-container-lowest border-r border-outline-variant flex flex-col">
+    <div className="min-h-screen flex flex-col md:flex-row bg-surface text-on-surface">
+      <aside className="w-full md:w-64 md:shrink-0 bg-surface-container-lowest border-b md:border-b-0 md:border-r border-outline-variant flex flex-col md:min-h-screen">
         <div className="p-4 border-b border-outline-variant">
           <Link href="/admin" className="flex items-center gap-2">
             <span className="material-symbols-outlined text-2xl text-secondary">admin_panel_settings</span>
             <span className="font-bold text-lg">TaskSphere Admin</span>
           </Link>
         </div>
-        <nav className="flex-1 overflow-y-auto p-2">
+        <nav className="flex-1 overflow-y-auto p-2 max-h-64 md:max-h-none">
           {NAV.map((s) => {
             const visible = s.items.filter((i) => !i.cap || caps.has(i.cap));
             if (visible.length === 0) return null;
@@ -129,7 +129,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           <button onClick={() => { localStorage.clear(); router.push('/sign-in'); }} className="block text-xs text-on-surface-variant hover:underline">Sign out</button>
         </div>
       </aside>
-      <main className="flex-1 overflow-y-auto">{children}</main>
+      <main className="flex-1 min-w-0 overflow-y-auto">{children}</main>
     </div>
   );
 }
