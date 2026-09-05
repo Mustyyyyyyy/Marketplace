@@ -141,7 +141,7 @@ function TaskerOverview({ me, profile }: { me: any; profile: any }) {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
             <div className="flex flex-col">
               <div className="flex items-center gap-space-xs">
-                <h2 className="font-headline-sm text-headline-sm text-on-surface">Curated For Your Skills</h2>
+                <h2 className="font-headline-sm text-headline-sm text-on-surface">Recommended for you</h2>
                 <span className="p-1 rounded-full bg-secondary-fixed text-on-secondary-fixed text-[14px] flex items-center justify-center">
                   <span className="material-symbols-outlined text-[16px]">stars</span>
                 </span>

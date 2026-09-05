@@ -7,15 +7,11 @@ import { useState } from 'react';
 export default function ContactPage() {
   const [form, setForm] = useState({ name: '', email: '', subject: 'general', message: '' });
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // We just persist to localStorage for the demo; replace with a real endpoint in production.
-    if (typeof window !== 'undefined') {
-      const existing = JSON.parse(localStorage.getItem('contact_messages') || '[]');
-      localStorage.setItem('contact_messages', JSON.stringify([...existing, { ...form, at: new Date().toISOString() }]));
-    }
-    setSent(true);
+    setError('Contact submissions are not configured yet. Please use one of the direct email channels.');
   };
 
   return (
@@ -33,6 +29,7 @@ export default function ContactPage() {
               </div>
             ) : (
               <form onSubmit={submit} className="space-y-space-md">
+                {error ? <div className="bg-error-container text-on-error-container rounded-xl p-space-sm text-sm">{error}</div> : null}
                 <div className="grid grid-cols-2 gap-space-md">
                   <label><span className="font-label-md text-label-md font-semibold">Name</span><input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="mt-1 w-full bg-surface-container-low px-space-md py-space-sm rounded-lg" /></label>
                   <label><span className="font-label-md text-label-md font-semibold">Email</span><input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="mt-1 w-full bg-surface-container-low px-space-md py-space-sm rounded-lg" /></label>

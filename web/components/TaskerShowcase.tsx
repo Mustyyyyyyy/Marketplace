@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 
 interface Tasker { id: string; displayName?: string; avatarUrl?: string; taskerProfile?: { headline?: string; bio?: string; ratingAvg?: number; ratingCount?: number; kycStatus?: string; } }
 
-const STARS = (n: number) => '★'.repeat(Math.round(n || 0)) + '☆'.repeat(5 - Math.round(n || 0));
 
 export default function TaskerShowcase() {
   const [taskers, setTaskers] = useState<Tasker[]>([]);
@@ -32,7 +31,7 @@ export default function TaskerShowcase() {
     <section className="py-space-3xl" id="taskers">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-space-md mb-space-xl">
         <div>
-          <span className="font-label-sm text-label-sm uppercase tracking-wider font-bold text-secondary">Top Rated</span>
+          <span className="font-label-sm text-label-sm uppercase tracking-wider font-bold text-secondary">Community picks</span>
           <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface tracking-tight mt-2">Meet trusted taskers</h2>
           <p className="font-body-md text-body-md text-on-surface-variant mt-1">Verified profiles, real reviews, ready to work.</p>
         </div>
@@ -68,7 +67,7 @@ export default function TaskerShowcase() {
                     ) : null}
                   </div>
                   {t.taskerProfile?.ratingAvg ? (
-                    <div className="text-xs text-warning">{STARS(t.taskerProfile.ratingAvg)} <span className="text-on-surface-variant">({t.taskerProfile.ratingCount || 0})</span></div>
+                    <div className="flex items-center gap-1 text-xs text-warning"><span className="material-symbols-outlined text-sm">star</span><span>{Number(t.taskerProfile.ratingAvg).toFixed(1)}</span><span className="text-on-surface-variant">({t.taskerProfile.ratingCount || 0} reviews)</span></div>
                   ) : null}
                 </div>
               </div>

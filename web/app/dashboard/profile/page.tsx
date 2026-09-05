@@ -62,7 +62,26 @@ export default function ProfilePage() {
             <ImageUploader
               kind="avatar"
               value={avatarUrl}
-              onChange={(url, publicId) => { setAvatarUrl(url); if (publicId) setAvatarPublicId(publicId); setMsg('Avatar updated. Click "Save changes" to confirm.'); }}
+              onChange={(url, publicId) => {
+                void (async () => {
+                  try {
+                    setAvatarUrl(url);
+                    if (publicId) setAvatarPublicId(publicId);
+                    const access = localStorage.getItem('access') || '';
+                    const response = await fetch('/api/backend/api/profile/me/avatar', {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + access },
+                      body: JSON.stringify({ avatarUrl: url, avatarPublicId: publicId }),
+                    });
+                    if (!response.ok) throw new Error('Avatar could not be saved.');
+                    const saved = await response.json();
+                    setMe((current: any) => ({ ...current, avatarUrl: saved.user.avatarUrl }));
+                    setMsg('Avatar saved.');
+                  } catch (error) {
+                    setMsg(error instanceof Error ? error.message : 'Avatar could not be saved.');
+                  }
+                })();
+              }}
               onError={(e) => setMsg(e)}
               label="Profile photo"
               shape="square"

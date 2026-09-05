@@ -29,7 +29,7 @@ export default function CTA({ stats }: { stats: { openTasks: number; taskersTota
               <div className="font-body-md text-body-md text-on-primary-container">Taskers on the platform</div>
             </div>
             <div className="bg-surface-container-lowest/10 backdrop-blur rounded-xl p-space-lg border border-white/10">
-              <div className="font-display-hero text-display-hero-mobile font-extrabold text-secondary-fixed">{stats.ratingAvg ? stats.ratingAvg.toFixed(1) + '★' : '—'}</div>
+              <div className="flex items-center gap-2 font-display-hero text-display-hero-mobile font-extrabold text-secondary-fixed">{stats.ratingAvg ? <><span>{stats.ratingAvg.toFixed(1)}</span><span className="material-symbols-outlined text-3xl">star</span></> : '—'}</div>
               <div className="font-body-md text-body-md text-on-primary-container">Average rating</div>
             </div>
             <div className="bg-surface-container-lowest/10 backdrop-blur rounded-xl p-space-lg border border-white/10">

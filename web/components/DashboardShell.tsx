@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-const LOGO = 'https://lh3.googleusercontent.com/aida/AEtjO1Uh2KoICI3H0JG_F-RkGVGqHTmX5Ntf-m5uOuZHNYazQ5RIKIDsSx0Ty8eYkXP0qoBYZ375y-LsRrcye21VpKE47q7xm5TyZDeBEtRO_aKPifxot6H9hmfROzMp5PH9o0XkZJ5tsFaK7iMwOUtNPPm3qp6uZuLDB_h1PDduiWIHp3H5hgK5dRjdr8lva2fbXGN5JeUNcAUtDuw3eIC8KRvvGx_nPJiMgJwoksoxsyKuwa5Fw3AfivJuCQ';
+const LOGO = '/icons/icon.svg';
 
 interface NavItem { href: string; label: string; icon: string; badge?: string | number; }
 
