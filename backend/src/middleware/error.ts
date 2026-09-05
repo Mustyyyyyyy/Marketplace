@@ -2,6 +2,9 @@ import { Request, Response, NextFunction } from 'express';
 import { HttpError } from '../errors';
 import { logger } from '../logger';
 
+export { HttpError as ApiError } from '../errors';
+export { HttpError } from '../errors';
+
 export function errorMiddleware(err: unknown, req: Request, res: Response, _next: NextFunction) {
   if (err instanceof HttpError) {
     res.status(err.status).json({ error: err.message, details: err.details });

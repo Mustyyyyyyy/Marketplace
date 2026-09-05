@@ -68,10 +68,11 @@ export async function signInOrSignUpWithFirebase(claims: FirebaseClaims, role: '
   } else {
     // Generate a random unguessable password (the user will only sign in via Firebase)
     const random = (await import('crypto')).randomBytes(32).toString('hex');
+    const passwordHash = await hashPassword(random);
     user = await withRetry(() => prisma.user.create({
       data: {
         email,
-        passwordHash: hashPassword(random),
+        passwordHash,
         role,
         displayName: claims.name || email.split('@')[0],
         country: 'US',
@@ -84,7 +85,7 @@ export async function signInOrSignUpWithFirebase(claims: FirebaseClaims, role: '
     }));
   }
 
-  const accessToken = signAccessToken({ sub: user.id, role: user.role });
-  const refreshToken = signRefreshToken({ sub: user.id });
+  const accessToken = signAccessToken({ sub: user.id, role: user.role, sid: '' });
+  const refreshToken = signRefreshToken({ sub: user.id, sid: '' });
   return { accessToken, refreshToken, user: { id: user.id, email: user.email, role: user.role, displayName: user.displayName } };
 }

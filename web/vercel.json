@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/backend/:path*",
-      "destination": "https://api.YOUR-BACKEND-HOST.com/api/:path*"
+      "destination": "https://marketplace-api.vercel.app/api/:path*"
     }
   ],
   "headers": [

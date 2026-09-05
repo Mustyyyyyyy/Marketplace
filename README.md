@@ -98,11 +98,21 @@ The verification rules live in [`backend/src/services/kycRules.ts`](backend/src/
 
 ## Deploying to production
 
+## Live URLs
+
+| App | URL |
+|---|---|
+| Web (Next.js) | https://marketplace-khaki-ten.vercel.app |
+| Backend (Vercel Function) | https://marketplace-api.vercel.app |
+
+## Architecture
+
 ```
 ┌─────────────────────┐         ┌──────────────────────┐
-│  Vercel (web)       │  /api/* │  Render / Railway /  │
-│  Next.js 14         │ ───────▶│  Fly.io (backend)    │
-│  tasksphere.app     │         │  api.tasksphere.app  │
+│  Vercel (web)       │  /api/* │  Vercel (backend)    │
+│  Next.js 14         │ ───────▶│  Express as Function │
+│  marketplace-       │         │  marketplace-        │
+│  khaki-ten          │         │  api.vercel.app      │
 └─────────────────────┘         └──────────────────────┘
                                        │
                                        ▼
@@ -113,41 +123,41 @@ The verification rules live in [`backend/src/services/kycRules.ts`](backend/src/
                                └──────────────────┘
 ```
 
-> **Why split?** Vercel is the best place to host a Next.js app, but its serverless functions don't support long-lived WebSocket connections — so the real-time chat (Socket.IO) needs a Node host for the backend. The web app talks to the backend through the `/api/backend/*` rewrite, which works the same in dev and in prod.
+> **Why two Vercel projects?** Vercel is the best place to host a Next.js app, and we can also run the Express backend as a Vercel Function in a separate project pointing at the `backend/` sub-folder. The downside: Vercel serverless functions don't support long-lived WebSocket connections, so the real-time chat (Socket.IO) falls back to polling. If you need true real-time, deploy the backend to Render, Fly.io, or Railway instead — `render.yaml` is included.
 
 ### Step 1 — Deploy the backend
 
-The backend is a regular Node.js app, so any Node host works. Two of the easiest:
+The backend is a regular Node.js app wrapped as a Vercel Function. To deploy it as a second Vercel project:
 
-**Render (free tier available):**
-1. Push the repo to GitHub.
-2. On Render click **New +** → **Blueprint** and point it at this repo. Render reads `render.yaml` and provisions a Postgres database + a Docker web service automatically.
-3. Fill in the secret env vars in the Render dashboard: `SMTP_USER`, `SMTP_PASS` (Gmail App Password), `CLOUDINARY_*`, `FIREBASE_*` (or `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`).
-4. Once deployed, copy the URL — e.g. `https://tasksphere-api.onrender.com`. Use this as `BACKEND_URL` below.
+1. Go to [vercel.com/new](https://vercel.com/new) → **Import** the same GitHub repo again.
+2. When prompted for **Root Directory**, click **Edit** and select `backend`. Click **Save**.
+3. In **Environment Variables**, add the variables from `backend/.env.example`. The required ones are listed at the top of `VERCEL.md`.
+4. Click **Deploy**. Once it's live, copy the URL — e.g. `https://marketplace-api.vercel.app`. You'll use this in step 2.
 
-**Fly.io / Railway:** any standard `node dist/server.js` host will work; just point it at the included `backend/Dockerfile`.
+> If you'd rather host the backend on Render, see the older "Render" instructions further down — `render.yaml` is still included.
 
 ### Step 2 — Deploy the web app to Vercel
 
 1. Go to [vercel.com/new](https://vercel.com/new) and import the repo.
-2. In **Project Settings → General → Root Directory** click **Edit** and set it to `web`. Click **Save**.
-3. Vercel auto-detects Next.js. Click **Deploy** — that's it. The included `web/vercel.json` adds the security headers, image caching, and the `/api/backend/*` rewrite to your deployed backend.
-4. In **Project Settings → Environment Variables** add:
-   - `NEXT_PUBLIC_API_BASE` = `https://tasksphere-api.onrender.com`
-5. Open the deployed URL. Done.
+2. The root `vercel.json` already sets `rootDirectory: "web"`, so Vercel builds the Next.js app automatically. If the project was imported before this commit, open **Project Settings → General → Root Directory** and set it to `web` manually.
+3. In **Project Settings → Environment Variables** add:
+   - `NEXT_PUBLIC_API_BASE` = `https://marketplace-api.vercel.app`
+4. Open the deployed URL. Done.
 
-> **Troubleshooting:** if the build fails with `Error: spawn npm ENOENT` or `Build machine configuration`, the most common cause is Vercel falling back to the legacy `builds` system. To force the modern system: make sure there's **no** `builds` array in the root `vercel.json`, and that `Root Directory` is set to `web` in the project settings. (The current root `vercel.json` is intentionally a tiny `$schema`-only shim so it can't trigger this.)
+> **Troubleshooting:** if the build fails with `Error: spawn npm ENOENT` or `Build machine configuration`, Vercel is falling back to the legacy `builds` system. Make sure the root `vercel.json` has no `builds` array (it doesn't) and that `Root Directory` is set to `web`.
 
 #### What's in the Vercel config?
 
 | File | Purpose |
 |---|---|
-| `vercel.json` (root) | Tiny shim (`$schema` only). The real config is in `web/vercel.json`. |
+| `vercel.json` (root) | Pins `rootDirectory: "web"`. |
 | `web/vercel.json` | Next.js-specific config: rewrites, security headers, image caching. |
+| `backend/vercel.json` | Tells Vercel to run the Express app as a Function. |
+| `backend/api/index.ts` | The Vercel Function entry that wraps the Express app. |
 
 #### Why the `/api/backend/*` rewrite?
 
-The web app's API client always calls relative paths like `fetch('/api/backend/api/tasks')`. The Vercel rewrite forwards those to `https://api.YOUR-BACKEND-HOST.com/api/tasks`. In dev, `next.config.mjs` does the same forwarding to `http://localhost:4000`. This means **no environment-specific code** in the React components.
+The web app's API client always calls relative paths like `fetch('/api/backend/api/tasks')`. The Vercel rewrite forwards those to `https://marketplace-api.vercel.app/api/tasks`. In dev, `next.config.mjs` does the same forwarding to `http://localhost:4000`. This means **no environment-specific code** in the React components.
 
 ### Step 3 — Build the mobile app
 
@@ -166,25 +176,28 @@ eas submit --platform android
 eas submit --platform ios
 ```
 
-The mobile app reads the API base from `app.json` → `extra.apiBaseUrl`. Update that to `https://tasksphere-api.onrender.com` before shipping a production build.
+The mobile app reads the API base from `app.json` → `extra.apiBaseUrl`. Update that to `https://marketplace-api.vercel.app` before shipping a production build.
 
 ## Verifying the deployment
 
 ```bash
+# Web app
+open https://marketplace-khaki-ten.vercel.app
+
 # Backend health
-curl https://tasksphere-api.onrender.com/health
+curl https://marketplace-api.vercel.app/health
 
 # Public stats (no auth)
-curl https://tasksphere-api.onrender.com/api/public/stats
+curl https://marketplace-api.vercel.app/api/public/stats
 
 # Country-aware KYC requirements
-curl "https://tasksphere-api.onrender.com/api/auth/kyc/requirements?country=NG&role=CUSTOMER"
+curl "https://marketplace-api.vercel.app/api/auth/kyc/requirements?country=NG&role=CUSTOMER"
 
 # Supported countries
-curl https://tasksphere-api.onrender.com/api/auth/kyc/countries
+curl https://marketplace-api.vercel.app/api/auth/kyc/countries
 
 # Web sign-in
-open https://tasksphere-web.vercel.app/sign-in
+open https://marketplace-khaki-ten.vercel.app/sign-in
 ```
 
 ## Known limitations

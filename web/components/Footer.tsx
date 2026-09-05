@@ -82,7 +82,7 @@ export default function Footer() {
           </div>
           <div className="font-body-sm text-body-sm text-on-surface-variant text-center md:text-right">
             <span>© {new Date().getFullYear()} TaskSphere, Inc. · </span>
-            <Link href="/privacy" className="hover:underline">Privacy</Link> · <Link href="/terms" className="hover:underline">Terms</Link> · <Link href="/cookies" className="hover:underline">Cookies</Link> · Built for Nigeria · UK · US · EU
+            <Link href="/privacy" className="hover:underline">Privacy</Link> · <Link href="/terms" className="hover:underline">Terms</Link> · <Link href="/cookies" className="hover:underline">Cookies</Link> · <a href="https://marketplace-khaki-ten.vercel.app" className="hover:underline">marketplace-khaki-ten.vercel.app</a> · Built for Nigeria · UK · US · EU
           </div>
         </div>
       </div>

@@ -1,46 +1,62 @@
 # Deploying to Vercel
 
-Quick reference for hosting the **web** app on Vercel. The backend is hosted
-on Render — see the root `README.md` for that side.
+Quick reference for hosting the **web** + **backend** on Vercel. We deploy
+both as separate Vercel projects pointing at different sub-folders of the
+same repo. They share a `*.vercel.app` prefix.
 
-## One-time setup
+## Live URLs
 
-1. **Import the repo** at [vercel.com/new](https://vercel.com/new).
-2. After the import, Vercel will try to detect the framework. The first
-   build will fail because Vercel is looking at the **monorepo root**.
-   That's expected — follow the next step to fix it.
+| App | URL |
+|---|---|
+| Web (Next.js) | `https://marketplace-khaki-ten.vercel.app` |
+| Backend (Express, as Vercel Functions) | `https://marketplace-api.vercel.app` |
+
+> If your backend project's URL is different (Vercel sometimes appends a
+> random suffix), replace `marketplace-api.vercel.app` everywhere it
+> appears in this repo: `web/vercel.json`, `web/next.config.mjs`,
+> `web/.env.example`.
+
+## One-time setup (per project)
+
+You will create **two Vercel projects** from the same GitHub repo:
+
+1. **Web project** — `vercel.json` at the repo root sets
+   `"rootDirectory": "web"`, so just import the repo and Vercel builds
+   the Next.js app.
+2. **Backend project** — in Project Settings → General → Root Directory
+   set it to `backend`. Vercel runs the Express app as a Serverless
+   Function (see `backend/vercel.json`).
 
 ## Critical: set the Root Directory
 
-1. In Vercel, open your project → **Settings** → **General**.
-2. Scroll to **Root Directory** → click **Edit**.
-3. Select `web` from the list, click **Save**.
-4. Vercel will trigger a fresh build of just the Next.js app.
+If Vercel is building from the monorepo root, you'll get `Error: spawn
+npm ENOENT` or a 404. The fix is the same as before:
 
-> ⚠️ If you skip this step, Vercel builds from the monorepo root and the
-> build will fail with `Error: spawn npm ENOENT` or `Build machine configuration`.
-> The legacy `builds` system tries to install `npm` globally and can't find it.
+1. Project → **Settings** → **General** → **Root Directory**.
+2. For the web project, set to `web`.
+3. For the backend project, set to `backend`.
+
+The root `vercel.json` already sets `rootDirectory: "web"` so the web
+project just works on the next push.
 
 ## Why two `vercel.json` files?
 
 | File | Purpose |
 |---|---|
-| `vercel.json` (root) | Tiny shim — just `$schema`. Exists so Vercel detects the monorepo but doesn't try to use the legacy `builds` system. |
-| `web/vercel.json` | The real config: rewrites `/api/backend/*` to the backend, plus security/cache headers. |
+| `vercel.json` (root) | Pins the web project's Root Directory to `web`. |
+| `web/vercel.json` | Rewrites `/api/backend/*` to the backend's Vercel URL. |
+| `backend/vercel.json` | Tells Vercel to run the Express app as a Serverless Function. |
 
-You should **never** need to add a `builds` array. The modern Vercel
-project-settings + per-app `vercel.json` workflow handles everything.
+## Web environment variables
 
-## Environment variables
+Set these in **Settings → Environment Variables** for the **web** project:
 
-Set these in **Settings → Environment Variables** (apply to all branches):
+| Variable | Value |
+|---|---|
+| `NEXT_PUBLIC_API_BASE` | `https://marketplace-api.vercel.app` |
+| `BACKEND_INTERNAL_URL` | same |
 
-| Variable | Value | Notes |
-|---|---|---|
-| `NEXT_PUBLIC_API_BASE` | `https://tasksphere-api.onrender.com` | Public URL of the backend. Browser uses this. |
-| `BACKEND_INTERNAL_URL` | same | Vercel-internal. Only used for SSR fetches. |
-
-Firebase web config (if you want the Firebase Client SDK path for Google sign-in):
+Firebase web config (optional, for the Firebase Client SDK path):
 
 | Variable | Value |
 |---|---|
@@ -51,47 +67,52 @@ Firebase web config (if you want the Firebase Client SDK path for Google sign-in
 | `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | from Firebase console |
 | `NEXT_PUBLIC_FIREBASE_APP_ID` | from Firebase console |
 
-If you leave the Firebase web config blank, the Google button falls back
-to the backend's server-side OAuth flow (configure `GOOGLE_CLIENT_ID` +
-`GOOGLE_CLIENT_SECRET` on the backend).
+If you leave these blank, the Google button falls back to the backend's
+server-side OAuth flow (set `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`
+on the backend).
 
-## Build & output settings
+## Backend environment variables
 
-Vercel auto-detects Next.js. Recommended overrides:
+Set these in the **backend** project's env. See `backend/.env.example`
+for the full list. Required:
 
-- **Framework Preset**: Next.js
-- **Build Command**: `next build` (default)
-- **Install Command**: `npm install` (default)
-- **Output Directory**: `.next` (default)
-- **Node.js Version**: 20.x
+| Variable | Value |
+|---|---|
+| `DATABASE_URL` | Neon pooler URL |
+| `DIRECT_URL` | Neon direct URL (for migrations) |
+| `JWT_SECRET` | long random string |
+| `JWT_REFRESH_SECRET` | long random string |
+| `CORS_ORIGINS` | `https://marketplace-khaki-ten.vercel.app` |
+| `FRONTEND_URL` | `https://marketplace-khaki-ten.vercel.app` |
+| `MOBILE_SCHEME` | `marketplace` |
+| `APP_BASE_URL` | `https://marketplace-khaki-ten.vercel.app` |
+| `ENABLE_DEV_ROUTES` | `0` in prod |
+| `PORT` | `4000` (Vercel ignores this) |
 
 ## Custom domain
 
 1. **Settings → Domains** → add your domain.
-2. Update `NEXT_PUBLIC_API_BASE` env var to the public backend URL
-   (if the backend is on a different host).
-3. Update the CORS allowlist on the backend to include your domain.
+2. Update `NEXT_PUBLIC_API_BASE` env var.
+3. Update `CORS_ORIGINS` on the backend to include the custom domain.
 
 ## Troubleshooting
 
-### `Error: spawn npm ENOENT` on build
+### 404 on the web URL
 
-Vercel is using the legacy `builds` system. Fix:
+Root Directory is wrong. Set it to `web` in the web project's settings.
+The root `vercel.json` already does this for fresh imports, but the
+existing project needs a manual fix.
 
-1. **Settings → General → Root Directory = `web`**.
-2. Make sure the root `vercel.json` has **no** `builds` array.
-3. Redeploy.
+### Build fails with `Error: spawn npm ENOENT`
 
-### Build succeeds but the API calls 404
+Legacy `builds` system. Make sure the root `vercel.json` has no `builds`
+array (it doesn't) and that the project's Root Directory = `web`.
 
-Your `NEXT_PUBLIC_API_BASE` env var is missing or set to the wrong URL.
-Check the browser network tab — the request URL should be
-`https://<your-app>.vercel.app/api/backend/api/...` and the Vercel
-rewrite should forward it to `<NEXT_PUBLIC_API_BASE>/api/...`.
+### Build succeeds but `/api/backend/...` returns 404
 
-### `Can't reach database server` on a server-side render
+`NEXT_PUBLIC_API_BASE` is wrong, or the backend project isn't deployed.
+Hit `https://marketplace-api.vercel.app/health` directly to verify.
 
-This is the Neon pooler being throttled. The web app's SSR fetches
-count against the same 5-connection cap as the backend. Either upgrade
-Neon to Pro, or reduce the number of SSR fetches per page (most pages
-fetch on the client only).
+### `Can't reach database server` on SSR
+
+The Neon pooler is throttling. Either upgrade Neon or reduce SSR fetches.

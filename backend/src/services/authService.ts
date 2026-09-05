@@ -8,6 +8,9 @@ import { sendEmail, welcomeEmail, emailVerifyEmail, passwordResetEmail, kycDecis
 import { withRetry } from '../db';
 import { getKycRules } from './kycRules';
 
+export { signAccess as signAccessToken, signRefresh as signRefreshToken } from '../utils/jwt';
+export { hashPassword } from '../utils/password';
+
 const prisma = new PrismaClient();
 
 export interface RegisterInput {

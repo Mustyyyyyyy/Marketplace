@@ -6,6 +6,7 @@
     "build": "tsc -p tsconfig.json",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "start": "node dist/server.js",
+    "vercel-build": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",
     "db:push": "prisma db push --skip-generate",
