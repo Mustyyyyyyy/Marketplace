@@ -81,10 +81,17 @@ npx expo start                       # scan QR with Expo Go
 npx expo start --web                 # run in browser
 ```
 
-The mobile app's API base lives in `app.json` → `extra.apiBaseUrl`. The
-defaults are `http://10.0.2.2:4000` (Android emulator → host) and
-`http://localhost:4000` (iOS sim / web). Edit `app.json` to point at a
-deployed backend before shipping a production build.
+The mobile app uses `EXPO_PUBLIC_API_BASE` when it is set. Otherwise, local
+development defaults to `http://10.0.2.2:4000` (Android emulator → host) and
+`http://localhost:4000` (iOS simulator / web). For a deployed build, use the
+unified Vercel URL:
+
+```bash
+EXPO_PUBLIC_API_BASE=https://your-project.vercel.app npx expo start
+```
+
+Set the same variable in the EAS build environment before shipping a
+production binary.
 
 ## Production build
 
@@ -97,5 +104,5 @@ eas submit --platform android
 eas submit --platform ios
 ```
 
-Update `app.json → extra.apiBaseUrl` to your production backend URL
+Set `EXPO_PUBLIC_API_BASE` to the deployed Vercel URL in the EAS environment.
 before triggering the production build.

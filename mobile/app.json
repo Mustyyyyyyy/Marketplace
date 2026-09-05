@@ -10,8 +10,15 @@
       "resizeMode": "contain",
       "backgroundColor": "#4F46E5"
     },
+    "icon": "./assets/icon.png",
     "ios": { "supportsTablet": true, "bundleIdentifier": "com.marketplace.app" },
-    "android": { "package": "com.marketplace.app", "adaptiveIcon": { "backgroundColor": "#4F46E5" } },
+    "android": {
+      "package": "com.marketplace.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#4F46E5"
+      }
+    },
     "web": { "bundler": "metro" },
     "plugins": ["expo-secure-store"],
     "extra": {

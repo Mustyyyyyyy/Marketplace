@@ -1,5 +1,8 @@
 function resolveApiBase(): string {
   try {
+    const configuredBase = process.env.EXPO_PUBLIC_API_BASE?.trim();
+    if (configuredBase) return configuredBase.replace(/\/+$/, '');
+
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const Constants = require('expo-constants').default || require('expo-constants');
     const extra = (Constants.expoConfig?.extra as any) || {};

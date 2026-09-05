@@ -1,118 +1,75 @@
-# Deploying to Vercel
+# Deploying the monorepo to Vercel
 
-Quick reference for hosting the **web** + **backend** on Vercel. We deploy
-both as separate Vercel projects pointing at different sub-folders of the
-same repo. They share a `*.vercel.app` prefix.
+The repository can be deployed as **one Vercel project** from the repository
+root. The project builds the Next.js app in `web/` and exposes the Express API
+from `backend/` through same-domain serverless functions.
 
-## Live URLs
+## Vercel project settings
 
-| App | URL |
-|---|---|
-| Web (Next.js) | `https://marketplace-khaki-ten.vercel.app` |
-| Backend (Express, as Vercel Functions) | `https://marketplace-api.vercel.app` |
+1. Import this repository into Vercel.
+2. Leave **Root Directory** set to the repository root (`.`).
+3. Leave the framework as **Next.js**. The root `vercel.json` supplies the
+   install and build commands.
+4. Add the environment variables below for Production, Preview, and
+   Development as appropriate.
 
-> If your backend project's URL is different (Vercel sometimes appends a
-> random suffix), replace `marketplace-api.vercel.app` everywhere it
-> appears in this repo: `web/vercel.json`, `web/next.config.mjs`,
-> `web/.env.example`.
+The root configuration:
 
-## One-time setup (per project)
+- installs dependencies in both `web/` and `backend/`;
+- generates the Prisma client before the build;
+- builds the Next.js app into `web/.next`;
+- serves backend routes under `/api/backend/*` on the same deployment;
+- exposes `/health` for deployment checks.
 
-You will create **two Vercel projects** from the same GitHub repo:
+## Required environment variables
 
-1. **Web project** — `vercel.json` at the repo root sets
-   `"rootDirectory": "web"`, so just import the repo and Vercel builds
-   the Next.js app.
-2. **Backend project** — in Project Settings → General → Root Directory
-   set it to `backend`. Vercel runs the Express app as a Serverless
-   Function (see `backend/vercel.json`).
-
-## Critical: set the Root Directory
-
-If Vercel is building from the monorepo root, you'll get `Error: spawn
-npm ENOENT` or a 404. The fix is the same as before:
-
-1. Project → **Settings** → **General** → **Root Directory**.
-2. For the web project, set to `web`.
-3. For the backend project, set to `backend`.
-
-The root `vercel.json` already sets `rootDirectory: "web"` so the web
-project just works on the next push.
-
-## Why two `vercel.json` files?
-
-| File | Purpose |
-|---|---|
-| `vercel.json` (root) | Pins the web project's Root Directory to `web`. |
-| `web/vercel.json` | Rewrites `/api/backend/*` to the backend's Vercel URL. |
-| `backend/vercel.json` | Tells Vercel to run the Express app as a Serverless Function. |
-
-## Web environment variables
-
-Set these in **Settings → Environment Variables** for the **web** project:
+Set these in the single Vercel project:
 
 | Variable | Value |
 |---|---|
-| `NEXT_PUBLIC_API_BASE` | `https://marketplace-api.vercel.app` |
-| `BACKEND_INTERNAL_URL` | same |
+| `DATABASE_URL` | Neon/Postgres pooler connection string |
+| `JWT_SECRET` | Long random production secret |
+| `PUBLIC_BASE_URL` | The deployed site URL, such as `https://your-project.vercel.app` |
+| `CORS_ORIGIN` | The deployed site URL |
 
-Firebase web config (optional, for the Firebase Client SDK path):
+For production authentication, uploads, email, and Google sign-in, also set
+the corresponding values from [`backend/.env.example`](C:/Users/HP/Desktop/Marketplace.worktrees/vercel-build-output-directory-fix/backend/.env.example).
 
-| Variable | Value |
-|---|---|
-| `NEXT_PUBLIC_FIREBASE_API_KEY` | from Firebase console |
-| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | from Firebase console |
-| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | from Firebase console |
-| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | from Firebase console |
-| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | from Firebase console |
-| `NEXT_PUBLIC_FIREBASE_APP_ID` | from Firebase console |
+The frontend API calls are same-origin in this setup, so
+`NEXT_PUBLIC_API_BASE` and `BACKEND_INTERNAL_URL` are not required. If
+`BACKEND_INTERNAL_URL` is set, it must point to this same deployment.
 
-If you leave these blank, the Google button falls back to the backend's
-server-side OAuth flow (set `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`
-on the backend).
+## Verification
 
-## Backend environment variables
+After deployment, check:
 
-Set these in the **backend** project's env. See `backend/.env.example`
-for the full list. Required:
+```text
+https://your-project.vercel.app/health
+```
 
-| Variable | Value |
-|---|---|
-| `DATABASE_URL` | Neon pooler URL |
-| `DIRECT_URL` | Neon direct URL (for migrations) |
-| `JWT_SECRET` | long random string |
-| `JWT_REFRESH_SECRET` | long random string |
-| `CORS_ORIGINS` | `https://marketplace-khaki-ten.vercel.app` |
-| `FRONTEND_URL` | `https://marketplace-khaki-ten.vercel.app` |
-| `MOBILE_SCHEME` | `marketplace` |
-| `APP_BASE_URL` | `https://marketplace-khaki-ten.vercel.app` |
-| `ENABLE_DEV_ROUTES` | `0` in prod |
-| `PORT` | `4000` (Vercel ignores this) |
+The expected response is JSON containing `"ok": true`.
 
-## Custom domain
+Frontend requests use `/api/backend/...`; Vercel rewrites those requests to
+the backend function while preserving the backend's `/api/...` route structure.
 
-1. **Settings → Domains** → add your domain.
-2. Update `NEXT_PUBLIC_API_BASE` env var.
-3. Update `CORS_ORIGINS` on the backend to include the custom domain.
+## Local development
 
-## Troubleshooting
+Run the applications separately:
 
-### 404 on the web URL
+```powershell
+cd backend
+npm install
+npm run prisma:generate
+npm run dev
+```
 
-Root Directory is wrong. Set it to `web` in the web project's settings.
-The root `vercel.json` already does this for fresh imports, but the
-existing project needs a manual fix.
+In another terminal:
 
-### Build fails with `Error: spawn npm ENOENT`
+```powershell
+cd web
+npm install
+npm run dev
+```
 
-Legacy `builds` system. Make sure the root `vercel.json` has no `builds`
-array (it doesn't) and that the project's Root Directory = `web`.
-
-### Build succeeds but `/api/backend/...` returns 404
-
-`NEXT_PUBLIC_API_BASE` is wrong, or the backend project isn't deployed.
-Hit `https://marketplace-api.vercel.app/health` directly to verify.
-
-### `Can't reach database server` on SSR
-
-The Neon pooler is throttling. Either upgrade Neon or reduce SSR fetches.
+The web app proxies `/api/backend/*` to `http://localhost:4000` through
+`web/next.config.mjs`.
