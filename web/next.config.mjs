@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_API_BASE ||
-  (process.env.VERCEL ? '' : 'http://localhost:4000');
+  (process.env.VERCEL
+    ? 'https://marketplace-2wmu41owh-adebayos-projects-1eb7ca4e.vercel.app'
+    : 'http://localhost:4000');
 
 const nextConfig = {
   reactStrictMode: true,

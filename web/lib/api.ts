@@ -1,7 +1,9 @@
 // Server-side API helper used during SSR. Routes via the Next.js rewrite to the backend.
 const BASE =
   process.env.BACKEND_INTERNAL_URL ||
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:4000');
+  (process.env.VERCEL
+    ? 'https://marketplace-2wmu41owh-adebayos-projects-1eb7ca4e.vercel.app'
+    : 'http://localhost:4000');
 
 export async function api<T = any>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, { ...init, cache: 'no-store' });
