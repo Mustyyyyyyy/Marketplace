@@ -205,7 +205,7 @@ router.get('/kyc/countries', (_req, res) => {
 // Public: rules for a given (country, role) — used by the signup preview
 router.get('/kyc/requirements', (req, res, next) => {
   try {
-    const country = String(req.query.country || 'NG').toUpperCase();
+    const country = String(req.query.country || 'GB').toUpperCase();
     const role = String(req.query.role || 'CUSTOMER').toUpperCase() === 'TASKER' ? 'TASKER' : 'CUSTOMER';
     const rules = getKycRules(country, role);
     res.json({

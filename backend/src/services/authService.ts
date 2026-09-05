@@ -36,7 +36,7 @@ export async function register(input: RegisterInput) {
 
   const passwordHash = await hashPassword(input.password);
   const role: Role = input.role === Role.TASKER ? Role.TASKER : Role.CUSTOMER;
-  const country = input.country || 'NG';
+  const country = input.country || 'GB';
 
   const user = await prisma.user.create({
     data: {

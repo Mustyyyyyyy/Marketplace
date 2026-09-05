@@ -30,4 +30,4 @@ export const env = {
 
 export const SUPPORTED_CURRENCIES = ['NGN', 'USD', 'EUR', 'GBP', 'ZAR', 'KES', 'GHS', 'INR'];
 export const SUPPORTED_LOCALES = ['en', 'fr', 'es', 'ha', 'yo', 'ig', 'de', 'nl'];
-export const SUPPORTED_COUNTRIES = ['NG', 'GB', 'US', 'DE', 'FR', 'IE', 'NL', 'ZA', 'KE', 'GH', 'IN'];
+export const SUPPORTED_COUNTRIES = ['GB', 'NG', 'US', 'DE', 'FR', 'IE', 'NL', 'ZA', 'KE', 'GH', 'IN'];

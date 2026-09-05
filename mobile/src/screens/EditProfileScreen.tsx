@@ -16,7 +16,7 @@ export default function EditProfileScreen() {
   const nav = useNavigation<NavigationProp<RootStackParamList>>();
   const auth = authStore.use();
   const [name, setName] = useState(auth.user?.displayName || '');
-  const [country, setCountry] = useState(auth.user?.country || 'NG');
+  const [country, setCountry] = useState(auth.user?.country || 'GB');
   const [currency, setCurrency] = useState(auth.user?.currency || 'USD');
   const [locale, setLocale] = useState(auth.user?.locale || 'en');
   const [bio, setBio] = useState('');

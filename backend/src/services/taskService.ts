@@ -38,7 +38,7 @@ export async function createTask(userId: string, input: CreateTaskInput, media: 
       preferredAt: input.preferredAt ? new Date(input.preferredAt) : null,
       expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
       city: input.city,
-      country: input.country || 'NG',
+      country: input.country || 'GB',
       lat: input.lat,
       lng: input.lng,
       serviceRadiusKm: input.serviceRadiusKm ?? 10,

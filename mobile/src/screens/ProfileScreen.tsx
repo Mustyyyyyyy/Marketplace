@@ -41,7 +41,7 @@ export default function ProfileScreen() {
             <Text style={typography.small}>{auth.user?.email}</Text>
             <View style={{ flexDirection: 'row', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
               <Pill label={auth.user?.role || 'CUSTOMER'} tone="accent" />
-              <Pill label={auth.user?.country || 'NG'} />
+              <Pill label={auth.user?.country || 'GB'} />
               {auth.user?.emailVerified ? <Pill label="Email verified" tone="success" /> : <Pill label="Email unverified" tone="warning" />}
             </View>
           </View>
