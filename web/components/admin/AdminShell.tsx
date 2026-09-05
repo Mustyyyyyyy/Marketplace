@@ -56,6 +56,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const [ctx, setCtx] = useState<AdminContext | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     adminApi.me()
@@ -89,15 +90,16 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
   const caps = new Set(ctx.capabilities);
   return (
-    <div className="min-h-screen flex bg-surface text-on-surface">
-      <aside className="w-64 shrink-0 bg-surface-container-lowest border-r border-outline-variant flex flex-col">
+    <div className="min-h-screen flex flex-col md:flex-row bg-surface text-on-surface">
+      {menuOpen ? <button aria-label="Close admin navigation" className="fixed inset-0 bg-black/30 z-40 md:hidden" onClick={() => setMenuOpen(false)} /> : null}
+      <aside className={`${menuOpen ? 'flex' : 'hidden'} md:flex fixed md:relative left-0 top-0 z-50 h-full md:h-auto w-72 md:w-64 md:shrink-0 bg-surface-container-lowest border-b md:border-b-0 md:border-r border-outline-variant flex-col md:min-h-screen`}>
         <div className="p-4 border-b border-outline-variant">
           <Link href="/admin" className="flex items-center gap-2">
             <span className="material-symbols-outlined text-2xl text-secondary">admin_panel_settings</span>
             <span className="font-bold text-lg">TaskSphere Admin</span>
           </Link>
         </div>
-        <nav className="flex-1 overflow-y-auto p-2">
+        <nav className="flex-1 overflow-y-auto p-2 max-h-64 md:max-h-none">
           {NAV.map((s) => {
             const visible = s.items.filter((i) => !i.cap || caps.has(i.cap));
             if (visible.length === 0) return null;
@@ -107,7 +109,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                 {visible.map((i) => {
                   const active = i.href === '/admin' ? pathname === '/admin' : pathname?.startsWith(i.href);
                   return (
-                    <Link key={i.href} href={i.href} className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${active ? 'bg-secondary text-on-secondary font-semibold' : 'hover:bg-surface-container text-on-surface'}`}>
+                    <Link key={i.href} href={i.href} onClick={() => setMenuOpen(false)} className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${active ? 'bg-secondary text-on-secondary font-semibold' : 'hover:bg-surface-container text-on-surface'}`}>
                       <span className="material-symbols-outlined text-[20px]">{i.icon}</span>
                       <span>{i.label}</span>
                     </Link>
@@ -125,11 +127,16 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
               <div className="text-xs text-on-surface-variant uppercase">{ctx.user.role}</div>
             </div>
           </div>
-          <Link href="/dashboard" className="block text-xs text-secondary hover:underline mb-1">← Back to app</Link>
+          <Link href="/dashboard" onClick={() => setMenuOpen(false)} className="block text-xs text-secondary hover:underline mb-1">← Back to app</Link>
           <button onClick={() => { localStorage.clear(); router.push('/sign-in'); }} className="block text-xs text-on-surface-variant hover:underline">Sign out</button>
         </div>
       </aside>
-      <main className="flex-1 overflow-y-auto">{children}</main>
+      <main className="relative flex-1 min-w-0 overflow-y-auto">
+        <button aria-label="Open admin navigation" className="fixed top-4 right-4 z-30 p-2 rounded-xl bg-surface-container-lowest shadow-md md:hidden" onClick={() => setMenuOpen(true)}>
+          <span className="material-symbols-outlined">menu</span>
+        </button>
+        {children}
+      </main>
     </div>
   );
 }

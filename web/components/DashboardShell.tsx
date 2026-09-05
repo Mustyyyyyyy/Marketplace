@@ -45,8 +45,10 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   const [checking, setChecking] = useState(true);
   const [unreadMsgs, setUnreadMsgs] = useState(0);
   const [notifDot, setNotifDot] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
+    setMenuOpen(false);
     const access = typeof window !== 'undefined' ? localStorage.getItem('access') : null;
     if (!access) { router.push('/sign-in?next=' + encodeURIComponent(path)); return; }
     Promise.all([
@@ -80,7 +82,8 @@ export default function DashboardShell({ children }: { children: React.ReactNode
 
   return (
     <div className="min-h-screen bg-surface">
-      <aside className="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+      {menuOpen ? <button aria-label="Close navigation" className="fixed inset-0 bg-black/30 z-40 lg:hidden" onClick={() => setMenuOpen(false)} /> : null}
+      <aside className={`${menuOpen ? 'flex' : 'hidden'} lg:flex fixed left-0 top-0 h-full w-72 bg-surface-container-lowest z-50 flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.04)]`}>
         <div className="flex flex-col flex-1 overflow-y-auto">
           <div className="h-16 px-space-md flex items-center justify-between bg-surface-container-lowest">
             <Link href="/dashboard" className="flex items-center gap-space-xs">
@@ -123,9 +126,12 @@ export default function DashboardShell({ children }: { children: React.ReactNode
         </div>
       </aside>
 
-      <div className="pl-72">
-        <header className="fixed top-0 left-72 right-0 h-16 bg-surface-container-lowest/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-gutter-desktop">
+      <div className="lg:pl-72">
+        <header className="fixed top-0 left-0 lg:left-72 right-0 h-16 bg-surface-container-lowest/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-gutter-mobile md:px-gutter-tablet lg:px-gutter-desktop">
           <div className="flex items-center gap-space-md">
+            <button aria-label="Open navigation" className="lg:hidden p-space-xs rounded-xl hover:bg-surface-container-high" onClick={() => setMenuOpen(true)}>
+              <span className="material-symbols-outlined">menu</span>
+            </button>
             <div className="relative hidden sm:flex items-center">
               <span className="material-symbols-outlined absolute left-space-sm text-outline pointer-events-none text-[18px]">search</span>
               <input className="h-10 pl-9 pr-14 w-64 lg:w-80 rounded-xl bg-surface-container-low font-body-sm text-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-secondary-container transition-all" placeholder="Search tasks, clients, messages..." type="text" />
@@ -177,7 +183,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             </Link>
           </div>
         </header>
-        <main className="relative pt-16 bg-surface min-h-screen px-gutter-desktop py-space-xl">
+        <main className="relative pt-16 bg-surface min-h-screen px-gutter-mobile md:px-gutter-tablet lg:px-gutter-desktop py-space-xl">
           {children}
         </main>
       </div>
