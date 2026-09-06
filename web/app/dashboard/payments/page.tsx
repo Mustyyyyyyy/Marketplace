@@ -38,8 +38,8 @@ export default function PaymentsPage() {
     ]);
     if (paymentsResponse.ok) {
       const result = await paymentsResponse.json();
-      setPayments(result.payments || []);
-      setWallet(result.wallet || { escrow: 0, earnings: 0, withdrawn: 0, available: 0 });
+      setPayments(Array.isArray(result.payments) ? result.payments : []);
+      setWallet(result.wallet && typeof result.wallet === 'object' ? result.wallet : { escrow: 0, earnings: 0, withdrawn: 0, available: 0 });
     }
     if (connectResponse.ok) setConnect(await connectResponse.json());
   };
@@ -58,7 +58,7 @@ export default function PaymentsPage() {
     const access = localStorage.getItem('access') || '';
     fetch(`/api/backend/api/payments/connect/banks/${country}`, { headers: { Authorization: `Bearer ${access}` } })
       .then((response) => response.ok ? response.json() : Promise.reject(new Error('Unable to load banks.')))
-      .then((result) => setBanks(result.banks || []))
+      .then((result) => setBanks(Array.isArray(result.banks) ? result.banks : []))
       .catch(() => setBanks([]));
   }, [country, connect?.connected]);
 
@@ -131,7 +131,7 @@ export default function PaymentsPage() {
           <h2 className="font-headline-sm text-headline-sm font-bold text-on-secondary-container">Payment required for this hire</h2>
           <p className="mt-1 text-on-secondary-container">Your payment is held securely until the work is accepted. The tasker receives 80% after completion.</p>
           <button onClick={startCheckout} disabled={busy} className="mt-space-md rounded-xl bg-secondary px-space-lg py-space-sm font-label-lg text-label-lg font-bold text-on-secondary disabled:opacity-60">
-            {busy ? 'Opening checkout…' : 'Pay securely with Stripe'}
+            {busy ? 'Opening checkout…' : 'Pay securely with Flutterwave'}
           </button>
         </section>
       ) : null}
