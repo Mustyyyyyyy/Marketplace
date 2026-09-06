@@ -12,6 +12,7 @@ const TASKER_NAV: NavItem[] = [
   { href: '/dashboard/find-tasks', label: 'Find Tasks', icon: 'search' },
   { href: '/dashboard/offers', label: 'My Offers', icon: 'local_offer' },
   { href: '/dashboard/jobs', label: 'My Jobs', icon: 'work' },
+  { href: '/dashboard/payments', label: 'Wallet & Payments', icon: 'payments' },
   { href: '/dashboard/messages', label: 'Messages', icon: 'chat_bubble' },
   { href: '/dashboard/notifications', label: 'Notifications', icon: 'notifications' },
   { href: '/dashboard/reviews', label: 'Reviews & Reputation', icon: 'star' },
