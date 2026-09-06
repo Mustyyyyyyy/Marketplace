@@ -140,6 +140,22 @@ enum KycSubmissionStatus {
   REJECTED
 }
 
+enum PaymentStatus {
+  REQUIRES_PAYMENT
+  PROCESSING
+  ESCROWED
+  RELEASED
+  REFUNDED
+  FAILED
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 enum NotificationChannel {
   IN_APP
   EMAIL
@@ -194,6 +210,9 @@ model User {
   currency          String        @default("NGN")
   avatarUrl         String?
   avatarPublicId    String?
+  flutterwaveBankCode      String?
+  flutterwaveAccountNumber String?
+  flutterwaveAccountName   String?
   displayName       String?
   // Signup funnel tracking
   signupStep        SignupStep    @default(PROFILE)
@@ -241,6 +260,9 @@ model User {
   offers            Offer[]
   hiresAsTasker     Hire[]        @relation("HireTasker")
   hiredAsCustomer   Hire[]        @relation("HireCustomer")
+  paymentsAsTasker  PlatformPayment[] @relation("PaymentTasker")
+  paymentsAsCustomer PlatformPayment[] @relation("PaymentCustomer")
+  payouts           Payout[]
   loginLogs         LoginLog[]
 }
 
@@ -441,6 +463,7 @@ model Offer {
   experience   String?
   createdAt    DateTime    @default(now())
   status       OfferStatus @default(PENDING)
+  hire         Hire?
 
   @@index([taskId, status])
   @@index([taskerId])
@@ -455,11 +478,54 @@ model Hire {
   customerId String
   customer   User    @relation("HireCustomer", fields: [customerId], references: [id])
   offerId    String?     @unique
+  offer      Offer?      @relation(fields: [offerId], references: [id])
   status     HireStatus  @default(ACTIVE)
   startedAt  DateTime?
   submittedAt DateTime?
   completedAt DateTime?
   createdAt  DateTime    @default(now())
+  payment     PlatformPayment?
+}
+
+model PlatformPayment {
+  id                    String        @id @default(cuid())
+  hireId                String        @unique
+  hire                  Hire          @relation(fields: [hireId], references: [id], onDelete: Cascade)
+  taskerId              String
+  tasker                User          @relation("PaymentTasker", fields: [taskerId], references: [id])
+  customerId            String
+  customer              User          @relation("PaymentCustomer", fields: [customerId], references: [id])
+  grossAmount           Float
+  platformFee           Float
+  taskerAmount          Float
+  currency              String
+  status                PaymentStatus @default(REQUIRES_PAYMENT)
+  flutterwaveTransactionId String?    @unique
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  paidAt                DateTime?
+  releasedAt            DateTime?
+  refundedAt            DateTime?
+  @@index([customerId, status])
+  @@index([taskerId, status])
+}
+
+model Payout {
+  id            String       @id @default(cuid())
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount        Float
+  currency      String
+  status        PayoutStatus @default(PENDING)
+  providerRef   String?      @unique
+  bankCode      String
+  accountNumber String
+  accountName   String?
+  failureReason String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  completedAt   DateTime?
+  @@index([userId, status])
 }
 
 model Conversation {

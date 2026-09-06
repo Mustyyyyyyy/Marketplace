@@ -43,6 +43,23 @@ uses the backend environment variable for API rewrites.
 Do not set `NODE_ENV=development` in Vercel. The configured production build
 command explicitly sets `NODE_ENV=production`.
 
+## Database migration
+
+Migrations are intentionally not run during every Vercel build. Run them once
+from a trusted shell using the same production `DATABASE_URL` configured in
+Vercel:
+
+```powershell
+cd backend
+$env:DATABASE_URL = "<production-postgres-connection-string>"
+npm install
+npm run prisma:deploy
+```
+
+Confirm the command reports that the migrations were applied before testing
+payments. The Flutterwave webhook will not persist payment or payout status
+until the payment tables exist.
+
 The backend project should use Root Directory `backend` and expose `/health`.
 
 ## Required environment variables
@@ -55,6 +72,8 @@ Set these in the backend project:
 | `JWT_SECRET` | Long random production secret |
 | `PUBLIC_BASE_URL` | `https://marketplace-beryl-one.vercel.app` |
 | `CORS_ORIGIN` | `https://marketplace-beryl-one.vercel.app` |
+| `FLW_SECRET_KEY` | Flutterwave live secret key |
+| `FLW_SECRET_HASH` | Flutterwave webhook verification hash |
 
 For production authentication, uploads, email, and Google sign-in, also set
 the corresponding values from [`backend/.env.example`](C:/Users/HP/Desktop/Marketplace.worktrees/vercel-build-output-directory-fix/backend/.env.example).
