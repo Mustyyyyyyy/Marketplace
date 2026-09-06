@@ -12,10 +12,10 @@ const SendSchema = z.object({ body: z.string().max(4000).optional(), attachmentU
 const ReportSchema = z.object({ reason: z.string().min(2).max(120), details: z.string().max(2000).optional() });
 const BlockSchema = z.object({ userId: z.string().min(1) });
 const DirectSchema = z.object({ userId: z.string().min(1) });
-const TaskConvSchema = z.object({ taskId: z.string().min(1) });
+const TaskConvSchema = z.object({ taskId: z.string().min(1), taskerId: z.string().min(1).optional() });
 
 router.post('/conversations/task', validateBody(TaskConvSchema), async (req: AuthedRequest, res, next) => {
-  try { res.json(await svc.getOrCreateTaskConversation(req.user!.id, req.body.taskId)); } catch (e) { next(e); }
+  try { res.json(await svc.getOrCreateTaskConversation(req.user!.id, req.body.taskId, req.body.taskerId)); } catch (e) { next(e); }
 });
 
 router.post('/conversations/direct', validateBody(DirectSchema), async (req: AuthedRequest, res, next) => {

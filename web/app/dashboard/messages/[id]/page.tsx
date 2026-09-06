@@ -19,7 +19,11 @@ export default function ChatThreadPage() {
     if (r.ok) { const j = await r.json(); setMessages(j.messages || []); }
   };
 
-  useEffect(() => { load(); }, [id]);
+  useEffect(() => {
+    void load();
+    const timer = window.setInterval(() => void load(), 5000);
+    return () => window.clearInterval(timer);
+  }, [id]);
 
   const send = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +53,7 @@ export default function ChatThreadPage() {
         </div>
         {err ? <div className="px-space-md pb-space-sm text-error text-sm">{err}</div> : null}
         <form onSubmit={send} className="p-space-md border-t border-outline-variant flex gap-space-sm">
-          <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a message" className="flex-1 bg-surface-container-low px-space-md py-space-sm rounded-lg" />
+          <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a message (contact details are not allowed)" className="flex-1 bg-surface-container-low px-space-md py-space-sm rounded-lg" />
           <button disabled={sending} className="px-space-lg py-space-sm rounded-xl bg-primary-container text-on-secondary-container font-label-lg text-label-lg font-bold disabled:opacity-60">{sending ? '…' : 'Send'}</button>
         </form>
       </div>

@@ -8,7 +8,7 @@ async function assertNotBlocked(a: string, b: string) {
   if (block) throw forbidden('Conversation blocked');
 }
 
-export async function getOrCreateTaskConversation(userId: string, taskId: string) {
+export async function getOrCreateTaskConversation(userId: string, taskId: string, selectedTaskerId?: string) {
   const task = await prisma.task.findUnique({ where: { id: taskId }, include: { conversation: true } });
   if (!task) throw notFound('Task not found');
   if (task.customerId !== userId) {
@@ -17,7 +17,9 @@ export async function getOrCreateTaskConversation(userId: string, taskId: string
     if (!offer) throw forbidden('Only the task owner or an offerer can open a conversation');
   }
   if (task.conversation) return task.conversation;
-  const other = task.customerId === userId ? (await prisma.offer.findFirst({ where: { taskId }, orderBy: { createdAt: 'asc' } }))?.taskerId : task.customerId;
+  const other = task.customerId === userId
+    ? (await prisma.offer.findFirst({ where: { taskId, ...(selectedTaskerId ? { taskerId: selectedTaskerId } : {}) }, orderBy: { createdAt: 'asc' } }))?.taskerId
+    : task.customerId;
   if (!other) throw badRequest('No other party to chat with yet');
   return prisma.conversation.create({ data: { taskId, userAId: task.customerId, userBId: other, kind: ConversationKind.TASK } });
 }
@@ -53,6 +55,12 @@ export async function sendMessage(userId: string, conversationId: string, body: 
   const text = (body || '').trim();
   if (!text && !attachmentUrl) throw badRequest('Empty message');
   if (text.length > 4000) throw badRequest('Message too long');
+  const normalized = text.toLowerCase().replace(/[\s().-]+/g, '');
+  const hasContactDetails = /(?:https?:\/\/|www\.)\S+|[\w.+-]+@[\w-]+\.[\w.-]+|\+?\d[\d\s().-]{7,}\d|(?:whatsapp|telegram|signal|instagram|snapchat|facebook|tiktok)\s*[:@]?\s*[\w.+-]+|(?:email|e-mail|phone|call|text|message)\s+me/.test(text)
+    || /(?:whatsapp|telegram|signal|instagram|snapchat|facebook|tiktok)/.test(normalized);
+  if (hasContactDetails || (attachmentUrl && /(?:whatsapp|telegram|instagram|facebook|tiktok|mailto:|tel:)/i.test(attachmentUrl))) {
+    throw badRequest('For your safety, contact details and external links cannot be shared in chat.');
+  }
   const conv = await prisma.conversation.findUnique({ where: { id: conversationId } });
   if (!conv) throw notFound();
   if (conv.userAId !== userId && conv.userBId !== userId) throw forbidden();

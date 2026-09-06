@@ -45,6 +45,7 @@ export async function submitKycMode(userId: string, country: string, role: 'CUST
   // In dev, auto-approve; in prod, leave PENDING for review
   const autoApprove = env.ENABLE_DEV_ROUTES || rule.mode === 'SANCTIONS_SCREEN' || rule.mode === 'EMAIL_OTP' || rule.mode === 'PHONE_OTP';
 
+  const latest = await prisma.kycSubmission.findFirst({ where: { userId, mode: input.mode }, orderBy: { submittedAt: 'desc' } });
   const submission = await prisma.kycSubmission.create({
     data: {
       userId,
@@ -57,6 +58,9 @@ export async function submitKycMode(userId: string, country: string, role: 'CUST
       reviewedAt: autoApprove ? new Date() : null,
     },
   });
+  if (latest && latest.status !== KycSubmissionStatus.APPROVED) {
+    await prisma.kycSubmission.update({ where: { id: latest.id }, data: { notes: latest.notes ? `${latest.notes}\nSuperseded by a newer submission.` : 'Superseded by a newer submission.' } });
+  }
 
   // Recompute overall user kycStatus
   await rollupKycStatus(userId, country, role);
@@ -103,7 +107,7 @@ export async function rollupKycStatus(userId: string, country: string, role: 'CU
 export async function getKycProgress(userId: string, country: string, role: 'CUSTOMER' | 'TASKER') {
   const rules = getKycRules(country, role);
   const requiredModes = rules.modes.filter((m) => m.required).map((m) => m.mode);
-  const subs = await prisma.kycSubmission.findMany({ where: { userId, mode: { in: requiredModes } } });
+  const subs = await prisma.kycSubmission.findMany({ where: { userId, mode: { in: requiredModes } }, orderBy: { submittedAt: 'desc' } });
   const byMode = new Map(subs.map((s) => [s.mode, s]));
   return {
     country: rules.country,

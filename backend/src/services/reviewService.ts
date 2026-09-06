@@ -1,5 +1,6 @@
 import { PrismaClient, TaskStatus } from '@prisma/client';
 import { badRequest, notFound, forbidden, conflict } from '../errors';
+import { releaseHirePayment } from './paymentService';
 
 const prisma = new PrismaClient();
 
@@ -25,7 +26,7 @@ export async function createReview(authorId: string, taskId: string, rating: num
   const existing = await prisma.review.findUnique({ where: { taskId } });
   if (existing) throw conflict('A review already exists for this task');
 
-  return await prisma.$transaction(async (tx) => {
+  const review = await prisma.$transaction(async (tx) => {
     const review = await tx.review.create({ data: { taskId, authorId, targetId, rating, body, verified: true } });
     // Recompute target rating
     const agg = await tx.review.aggregate({ where: { targetId }, _avg: { rating: true }, _count: { rating: true } });
@@ -39,6 +40,8 @@ export async function createReview(authorId: string, taskId: string, rating: num
     await tx.hire.update({ where: { id: hire.id }, data: { status: 'COMPLETED', completedAt: new Date() } });
     return review;
   });
+  await releaseHirePayment(hire.id);
+  return review;
 }
 
 export async function flagReview(targetId: string, reviewId: string) {

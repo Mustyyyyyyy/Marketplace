@@ -56,9 +56,8 @@ export default function VerifyIdentityPage() {
   const [err, setErr] = useState<string | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
 
-  const access = typeof window !== 'undefined' ? localStorage.getItem('access') : null;
-
   async function load() {
+    const access = typeof window !== 'undefined' ? localStorage.getItem('access') : null;
     if (!access) { router.push('/sign-in'); return; }
     setLoading(true);
     try {
@@ -70,10 +69,12 @@ export default function VerifyIdentityPage() {
     finally { setLoading(false); }
   }
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+  useEffect(() => { void load(); /* eslint-disable-next-line */ }, []);
 
   async function submitMode(mode: KycModeProgress) {
     if (!progress) return;
+    const access = typeof window !== 'undefined' ? localStorage.getItem('access') : null;
+    if (!access) { router.push('/sign-in?next=/verify-identity'); return; }
     setBusy(mode.mode);
     setErr(null);
     try {
@@ -115,6 +116,7 @@ export default function VerifyIdentityPage() {
   }
 
   async function devApprove() {
+    const access = typeof window !== 'undefined' ? localStorage.getItem('access') : null;
     if (!access) return;
     setBusy('SANCTIONS_SCREEN' as any);
     setErr(null);
@@ -151,7 +153,13 @@ export default function VerifyIdentityPage() {
           <span className={`px-space-sm py-1 rounded-full text-[10px] font-bold uppercase ${allDone ? 'bg-tertiary text-on-tertiary' : 'bg-secondary text-on-secondary'}`}>
             {allDone ? 'Step 2 complete' : 'Step 2 of 2 · Identity verification'}
           </span>
-          <Link href="/sign-in" className="font-label-sm text-label-sm text-on-surface-variant">Sign out</Link>
+          <button
+            type="button"
+            onClick={() => { localStorage.removeItem('access'); localStorage.removeItem('refresh'); router.push('/sign-in'); }}
+            className="font-label-sm text-label-sm text-on-surface-variant"
+          >
+            Sign out
+          </button>
         </div>
         <h1 className="font-headline-lg text-headline-lg font-bold text-on-surface mt-space-sm">
           Verify your identity — {progress.countryName}

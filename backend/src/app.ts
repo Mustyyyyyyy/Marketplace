@@ -21,12 +21,14 @@ import trustRoutes from './routes/trust';
 import adminRoutes from './routes/admin';
 import recommendationRoutes from './routes/recommendations';
 import uploadRoutes from './routes/uploads';
+import paymentRoutes from './routes/payments';
 
 export function createApp() {
   const app = express();
   app.disable('x-powered-by');
   app.use(helmet());
   app.use(cors({ origin: env.CORS_ORIGIN === '*' ? true : env.CORS_ORIGIN.split(','), credentials: true }));
+  app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
   app.use(express.json({ limit: '5mb' }));
   app.use(express.urlencoded({ extended: true, limit: '5mb' }));
   app.use(pinoHttp({ logger }));
@@ -47,6 +49,7 @@ export function createApp() {
   app.use('/api/tasks', taskRoutes);
   app.use('/api', offerRoutes);
   app.use('/api', messageRoutes);
+  app.use('/api/payments', paymentRoutes);
   app.use('/api/notifications', notificationRoutes);
   app.use('/api', reviewRoutes);
   app.use('/api', trustRoutes);

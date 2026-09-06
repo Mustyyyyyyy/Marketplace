@@ -103,5 +103,5 @@ export async function listOffersForTask(customerId: string, taskId: string) {
 }
 
 export async function myOffers(taskerId: string) {
-  return prisma.offer.findMany({ where: { taskerId }, include: { task: { select: { id: true, title: true, status: true, budgetAmount: true, currency: true } } }, orderBy: { createdAt: 'desc' } });
+  return prisma.offer.findMany({ where: { taskerId }, include: { task: { select: { id: true, title: true, status: true, budgetAmount: true, currency: true } }, hire: { include: { payment: true } } }, orderBy: { createdAt: 'desc' } });
 }
