@@ -156,6 +156,17 @@ enum PayoutStatus {
   FAILED
 }
 
+enum TransactionType {
+  PAYMENT_ESCROWED
+  PLATFORM_FEE
+  TASKER_EARNED
+  REFUND
+  PAYOUT_REQUESTED
+  PAYOUT_COMPLETED
+  PAYOUT_FAILED
+  ADJUSTMENT
+}
+
 enum NotificationChannel {
   IN_APP
   EMAIL
@@ -263,6 +274,7 @@ model User {
   paymentsAsTasker  PlatformPayment[] @relation("PaymentTasker")
   paymentsAsCustomer PlatformPayment[] @relation("PaymentCustomer")
   payouts           Payout[]
+  walletTransactions WalletTransaction[]
   loginLogs         LoginLog[]
 }
 
@@ -506,6 +518,7 @@ model PlatformPayment {
   paidAt                DateTime?
   releasedAt            DateTime?
   refundedAt            DateTime?
+  walletTransactions    WalletTransaction[]
   @@index([customerId, status])
   @@index([taskerId, status])
 }
@@ -525,7 +538,29 @@ model Payout {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   completedAt   DateTime?
+  walletTransactions WalletTransaction[]
   @@index([userId, status])
+}
+
+model WalletTransaction {
+  id        String          @id @default(cuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  paymentId String?
+  payment   PlatformPayment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  payoutId  String?
+  payout    Payout?         @relation(fields: [payoutId], references: [id], onDelete: SetNull)
+  type      TransactionType
+  amount    Float
+  currency  String
+  balanceAfter Float?
+  reference String?
+  metadata  String?
+  createdAt DateTime        @default(now())
+  @@unique([userId, type, reference])
+  @@index([userId, createdAt])
+  @@index([paymentId])
+  @@index([payoutId])
 }
 
 model Conversation {

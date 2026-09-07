@@ -27,6 +27,8 @@ export const CAPABILITIES = {
   DISPUTES_VIEW: 'disputes:view',
   DISPUTES_RESOLVE: 'disputes:resolve',
   DISPUTES_ESCALATE: 'disputes:escalate',
+  PAYMENTS_VIEW: 'payments:view',
+  PAYMENTS_REFUND: 'payments:refund',
 
   // Reports / moderation
   REPORTS_VIEW: 'reports:view',

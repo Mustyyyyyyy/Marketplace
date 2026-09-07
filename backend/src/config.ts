@@ -28,6 +28,18 @@ export const env = {
   ADMIN_BOOTSTRAP_PASSWORD: process.env.ADMIN_BOOTSTRAP_PASSWORD || '',
 };
 
+export function validateProductionConfig() {
+  if (env.NODE_ENV !== 'production') return;
+  const missing: string[] = [];
+  if (!process.env.DATABASE_URL) missing.push('DATABASE_URL');
+  if (!process.env.JWT_SECRET || env.JWT_SECRET === 'dev-secret-change-me-please-32-chars') missing.push('JWT_SECRET');
+  if (!process.env.CORS_ORIGIN || env.CORS_ORIGIN === '*') missing.push('CORS_ORIGIN');
+  if (!env.PUBLIC_BASE_URL.startsWith('https://')) missing.push('PUBLIC_BASE_URL');
+  if (!process.env.FLW_SECRET_KEY) missing.push('FLW_SECRET_KEY');
+  if (!process.env.FLW_SECRET_HASH) missing.push('FLW_SECRET_HASH');
+  if (missing.length) throw new Error(`Missing unsafe production configuration: ${missing.join(', ')}`);
+}
+
 export const SUPPORTED_CURRENCIES = ['NGN', 'USD', 'EUR', 'GBP', 'ZAR', 'KES', 'GHS', 'INR'];
 export const SUPPORTED_LOCALES = ['en', 'fr', 'es', 'ha', 'yo', 'ig', 'de', 'nl'];
 export const SUPPORTED_COUNTRIES = ['GB', 'NG', 'US', 'DE', 'FR', 'IE', 'NL', 'ZA', 'KE', 'GH', 'IN'];

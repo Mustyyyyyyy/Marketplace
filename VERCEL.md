@@ -37,7 +37,7 @@ Create two Vercel projects from the same GitHub repository.
 
 `web/vercel.json` supplies security headers, while `web/next.config.mjs`
 uses the backend environment variable for API rewrites.
-4. Add the environment variables below for Production, Preview, and
+Add the environment variables below for Production, Preview, and
    Development as appropriate.
 
 Do not set `NODE_ENV=development` in Vercel. The configured production build

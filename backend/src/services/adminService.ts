@@ -4,6 +4,7 @@
 // for role-based defaults + per-admin overrides.
 
 import { PrismaClient, UserStatus, Role, KycStatus, KycSubmissionStatus, TaskStatus, DisputeStatus, Prisma } from '@prisma/client';
+import { refundPayment, releaseHirePayment } from './paymentService';
 import { notFound, badRequest, forbidden, conflict } from '../errors';
 import { withRetry } from '../db';
 import { hashPassword } from '../utils/password';
@@ -338,8 +339,28 @@ export async function resolveDispute(disputeId: string, resolution: 'customer' |
     where: { id: disputeId },
     data: { status: map[resolution] as DisputeStatus, resolution: notes },
   });
+  const task = await prisma.task.findUnique({ where: { id: d.taskId }, include: { hires: { include: { payment: true } } } });
+  const payment = task?.hires[0]?.payment;
+  if (payment && resolution === 'customer' && payment.status === 'ESCROWED') await refundPayment(payment.id, actorId);
+  if (payment && (resolution === 'tasker' || resolution === 'closed') && payment.status === 'ESCROWED') await releaseHirePayment(payment.hireId);
   await logAudit(actorId, `dispute.resolve.${resolution}`, disputeId, { notes });
   return d;
+}
+
+export async function listPaymentOperations(page = 1, pageSize = 50) {
+  const take = Math.min(100, Math.max(1, pageSize));
+  const skip = (Math.max(1, page) - 1) * take;
+  const [items, total] = await Promise.all([
+    prisma.platformPayment.findMany({ orderBy: { createdAt: 'desc' }, take, skip, include: { customer: { select: { id: true, email: true, displayName: true } }, tasker: { select: { id: true, email: true, displayName: true } }, hire: { select: { id: true, taskId: true, status: true } } } }),
+    prisma.platformPayment.count(),
+  ]);
+  return { items, total, page: Math.max(1, page), pageSize: take, pages: Math.ceil(total / take) };
+}
+
+export async function refundPaymentOperation(paymentId: string, actorId: string) {
+  const result = await refundPayment(paymentId, actorId);
+  await logAudit(actorId, 'payment.refund', paymentId, {});
+  return result;
 }
 
 // =====================================================================

@@ -1,9 +1,36 @@
 import { PrismaClient, PaymentStatus, PayoutStatus } from '@prisma/client';
 import { badRequest, forbidden, notFound } from '../errors';
+import { notify } from './notify';
 
 const prisma = new PrismaClient();
 const FLUTTERWAVE_URL = 'https://api.flutterwave.com/v3';
 const PLATFORM_FEE_RATE = 0.2;
+
+async function recordTransaction(data: {
+  userId: string;
+  paymentId?: string;
+  payoutId?: string;
+  type: 'PAYMENT_ESCROWED' | 'PLATFORM_FEE' | 'TASKER_EARNED' | 'REFUND' | 'PAYOUT_REQUESTED' | 'PAYOUT_COMPLETED' | 'PAYOUT_FAILED' | 'ADJUSTMENT';
+  amount: number;
+  currency: string;
+  reference: string;
+  metadata?: Record<string, unknown>;
+}) {
+  return prisma.walletTransaction.upsert({
+    where: { userId_type_reference: { userId: data.userId, type: data.type, reference: data.reference } },
+    update: {},
+    create: {
+      userId: data.userId,
+      paymentId: data.paymentId,
+      payoutId: data.payoutId,
+      type: data.type,
+      amount: data.amount,
+      currency: data.currency,
+      reference: data.reference,
+      metadata: data.metadata ? JSON.stringify(data.metadata) : null,
+    },
+  });
+}
 
 function requireFlutterwave() {
   const key = process.env.FLW_SECRET_KEY;
@@ -104,34 +131,68 @@ export async function requestPayout(userId: string, amount: number, currencyValu
   const bank = bankCode || user.flutterwaveBankCode;
   const account = accountNumber || user.flutterwaveAccountNumber;
   if (!bank || !account) throw badRequest('Verify your local bank account before withdrawing.');
+  const released = await prisma.platformPayment.aggregate({ where: { taskerId: userId, status: PaymentStatus.RELEASED, currency: currency(currencyValue) }, _sum: { taskerAmount: true } });
+  const withdrawn = await prisma.payout.aggregate({ where: { userId, currency: currency(currencyValue), status: { in: [PayoutStatus.PROCESSING, PayoutStatus.COMPLETED] } }, _sum: { amount: true } });
+  const available = (released._sum.taskerAmount || 0) - (withdrawn._sum.amount || 0);
+  if (amount > available) throw badRequest(`Insufficient available balance. Available: ${available.toFixed(2)} ${currency(currencyValue)}.`);
   const payout = await prisma.payout.create({ data: { userId, amount, currency: currency(currencyValue), bankCode: bank, accountNumber: account, accountName: user.flutterwaveAccountName, status: PayoutStatus.PROCESSING } });
+  await recordTransaction({ userId, payoutId: payout.id, type: 'PAYOUT_REQUESTED', amount: -amount, currency: payout.currency, reference: `payout-requested-${payout.id}` });
   try {
     const result = await flutterwave<{ data: { id: number; status: string } }>('/transfers', {
       method: 'POST',
       body: JSON.stringify({ account_bank: bank, account_number: account, amount, currency: currency(currencyValue), beneficiary_name: user.flutterwaveAccountName || user.email, narration: 'TaskSphere payout', reference: `tasksphere-payout-${payout.id}` }),
     });
     const updated = await prisma.payout.update({ where: { id: payout.id }, data: { providerRef: String(result.data.id), status: result.data.status === 'SUCCESSFUL' ? PayoutStatus.COMPLETED : PayoutStatus.PROCESSING, completedAt: result.data.status === 'SUCCESSFUL' ? new Date() : null } });
+    if (updated.status === PayoutStatus.COMPLETED) {
+      await recordTransaction({ userId, payoutId: updated.id, type: 'PAYOUT_COMPLETED', amount: -updated.amount, currency: updated.currency, reference: `payout-completed-${updated.id}` });
+      await notify({ userId, type: 'PAYOUT_COMPLETED', title: 'Payout completed', body: `${updated.currency} ${updated.amount.toFixed(2)} has been sent to your bank account.` });
+    }
     return updated;
   } catch (error) {
     await prisma.payout.update({ where: { id: payout.id }, data: { status: PayoutStatus.FAILED, failureReason: error instanceof Error ? error.message : 'Transfer failed' } });
+    await recordTransaction({ userId, payoutId: payout.id, type: 'PAYOUT_FAILED', amount, currency: payout.currency, reference: `payout-failed-${payout.id}` });
     throw error;
   }
 }
 
 export async function listPayments(userId: string) {
-  const [payments, payouts] = await Promise.all([
+  const [payments, payouts, transactions] = await Promise.all([
     prisma.platformPayment.findMany({ where: { OR: [{ customerId: userId }, { taskerId: userId }] }, orderBy: { createdAt: 'desc' }, take: 100 }),
     prisma.payout.findMany({ where: { userId }, orderBy: { createdAt: 'desc' }, take: 100 }),
+    prisma.walletTransaction.findMany({ where: { userId }, orderBy: { createdAt: 'desc' }, take: 100 }),
   ]);
   const escrow = payments.filter((p) => p.status === PaymentStatus.ESCROWED).reduce((sum, p) => sum + p.grossAmount, 0);
   const earnings = payments.filter((p) => p.taskerId === userId && p.status === PaymentStatus.RELEASED).reduce((sum, p) => sum + p.taskerAmount, 0);
   const withdrawn = payouts.filter((p) => p.status === PayoutStatus.COMPLETED).reduce((sum, p) => sum + p.amount, 0);
-  return { payments, payouts, wallet: { escrow, earnings, withdrawn, available: Math.max(0, earnings - withdrawn) } };
+  return {
+    payments,
+    payouts: payouts.map((payout) => ({ ...payout, accountNumber: `****${payout.accountNumber.slice(-4)}` })),
+    transactions,
+    wallet: { escrow, earnings, withdrawn, available: Math.max(0, earnings - withdrawn) },
+  };
 }
 
 export async function releaseHirePayment(hireId: string) {
   const payment = await prisma.platformPayment.findUnique({ where: { hireId } });
   if (payment?.status === PaymentStatus.ESCROWED) await prisma.platformPayment.update({ where: { id: payment.id }, data: { status: PaymentStatus.RELEASED, releasedAt: new Date() } });
+  if (payment?.status === PaymentStatus.ESCROWED) {
+    await recordTransaction({ userId: payment.taskerId, paymentId: payment.id, type: 'TASKER_EARNED', amount: payment.taskerAmount, currency: payment.currency, reference: `tasker-earned-${payment.id}` });
+    await recordTransaction({ userId: payment.customerId, paymentId: payment.id, type: 'PLATFORM_FEE', amount: -payment.platformFee, currency: payment.currency, reference: `platform-fee-${payment.id}` });
+    await notify({ userId: payment.taskerId, type: 'PAYMENT_RELEASED', title: 'Payment released', body: `${payment.currency} ${payment.taskerAmount.toFixed(2)} is now available in your wallet.` });
+  }
+}
+
+export async function refundPayment(paymentId: string, actorId?: string) {
+    const payment = await prisma.platformPayment.findUnique({ where: { id: paymentId } });
+    if (!payment) throw notFound();
+    if (payment.status !== PaymentStatus.ESCROWED && payment.status !== PaymentStatus.PROCESSING) throw badRequest('This payment cannot be refunded in its current state.');
+    if (payment.flutterwaveTransactionId) {
+      await flutterwave(`/transactions/${payment.flutterwaveTransactionId}/refund`, { method: 'POST', body: JSON.stringify({ amount: payment.grossAmount }) });
+    }
+    const updated = await prisma.platformPayment.update({ where: { id: payment.id }, data: { status: PaymentStatus.REFUNDED, refundedAt: new Date() } });
+    await recordTransaction({ userId: payment.customerId, paymentId: payment.id, type: 'REFUND', amount: payment.grossAmount, currency: payment.currency, reference: `refund-${payment.id}`, metadata: { actorId } });
+    await notify({ userId: payment.customerId, type: 'GENERIC', title: 'Payment refunded', body: `${payment.currency} ${payment.grossAmount.toFixed(2)} has been refunded.` });
+    return updated;
 }
 
 export async function handleWebhook(rawBody: Buffer, signature: string) {
@@ -140,7 +201,14 @@ export async function handleWebhook(rawBody: Buffer, signature: string) {
   const event = JSON.parse(rawBody.toString());
   if (event.event === 'charge.completed' && event.data?.status === 'successful') {
     const paymentId = event.data.meta?.paymentId;
-    if (paymentId) await prisma.platformPayment.update({ where: { id: paymentId }, data: { status: PaymentStatus.ESCROWED, paidAt: new Date(), flutterwaveTransactionId: String(event.data.id) } });
+    if (paymentId) {
+      const existing = await prisma.platformPayment.findUnique({ where: { id: paymentId } });
+      if (!existing) throw notFound('Payment not found');
+      if (existing.status === PaymentStatus.ESCROWED || existing.status === PaymentStatus.RELEASED || existing.status === PaymentStatus.REFUNDED) return { received: true };
+      const payment = await prisma.platformPayment.update({ where: { id: paymentId }, data: { status: PaymentStatus.ESCROWED, paidAt: new Date(), flutterwaveTransactionId: String(event.data.id) } });
+      await recordTransaction({ userId: payment.customerId, paymentId: payment.id, type: 'PAYMENT_ESCROWED', amount: -payment.grossAmount, currency: payment.currency, reference: `payment-escrowed-${payment.id}` });
+      await notify({ userId: payment.customerId, type: 'PAYMENT_ESCROWED', title: 'Payment secured', body: `${payment.currency} ${payment.grossAmount.toFixed(2)} is held securely for this task.` });
+    }
   }
   if (event.event === 'transfer.completed' || event.event === 'transfer.failed') {
     const providerRef = String(event.data?.id || '');
