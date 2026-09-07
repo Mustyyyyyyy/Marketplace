@@ -64,10 +64,13 @@ export default function GetStartedPage() {
         body: JSON.stringify({ email, password }),
       });
       const j = await lr.json();
+      if (!lr.ok) throw new Error(j.error || 'Account created, but automatic sign in failed. Please sign in manually.');
       if (j?.accessToken) {
         setTokens(j.accessToken, j.refreshToken);
         // Pre-warm /me so the next page renders instantly.
         await fetchMe(true);
+      } else {
+        throw new Error('Account created, but automatic sign in failed. Please sign in manually.');
       }
       router.push('/verify-identity');
     } catch (e: any) { setErr(e.message); }
