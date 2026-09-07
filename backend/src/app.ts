@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import pinoHttp from 'pino-http';
-import { env } from './config';
+import { env, validateProductionConfig } from './config';
 import { logger } from './logger';
 import { errorMiddleware, notFoundMiddleware } from './middleware/error';
 import { configureCloudinary } from './services/cloudinaryService';
@@ -24,6 +24,7 @@ import uploadRoutes from './routes/uploads';
 import paymentRoutes from './routes/payments';
 
 export function createApp() {
+  validateProductionConfig();
   const app = express();
   app.disable('x-powered-by');
   app.use(helmet());

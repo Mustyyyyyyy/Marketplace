@@ -14,10 +14,12 @@ type Payment = {
   status: string;
   createdAt: string;
 };
+type WalletTransaction = { id: string; type: string; amount: number; currency: string; reference?: string | null; createdAt: string };
 
 export default function PaymentsPage() {
   const [hireId, setHireId] = useState<string | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [wallet, setWallet] = useState({ escrow: 0, earnings: 0, withdrawn: 0, available: 0 });
   const [connect, setConnect] = useState<{ connected: boolean; accountName?: string } | null>(null);
   const [amount, setAmount] = useState('');
@@ -39,6 +41,7 @@ export default function PaymentsPage() {
     if (paymentsResponse.ok) {
       const result = await paymentsResponse.json();
       setPayments(Array.isArray(result.payments) ? result.payments : []);
+      setTransactions(Array.isArray(result.transactions) ? result.transactions : []);
       setWallet(result.wallet && typeof result.wallet === 'object' ? result.wallet : { escrow: 0, earnings: 0, withdrawn: 0, available: 0 });
     }
     if (connectResponse.ok) setConnect(await connectResponse.json());
@@ -171,12 +174,12 @@ export default function PaymentsPage() {
 
         <section className="rounded-2xl bg-surface-container-lowest p-space-lg shadow-sm">
           <h2 className="font-headline-sm text-headline-sm font-bold">Transaction history</h2>
-          {payments.length === 0 ? <p className="mt-space-md text-on-surface-variant">No payments yet.</p> : (
+          {transactions.length === 0 ? <p className="mt-space-md text-on-surface-variant">No transactions yet.</p> : (
             <div className="mt-space-md space-y-space-sm">
-              {payments.map((payment) => (
-                <div key={payment.id} className="flex items-center justify-between gap-space-sm rounded-xl bg-surface-container-low p-space-sm">
-                  <div><p className="font-label-md text-label-md font-semibold">{payment.currency} {payment.grossAmount.toLocaleString()}</p><p className="text-xs text-on-surface-variant">{new Date(payment.createdAt).toLocaleDateString()}</p></div>
-                  <span className="rounded-full bg-surface-container px-space-sm py-1 text-[10px] font-bold uppercase">{payment.status.replace('_', ' ')}</span>
+              {transactions.map((transaction) => (
+                <div key={transaction.id} className="flex items-center justify-between gap-space-sm rounded-xl bg-surface-container-low p-space-sm">
+                  <div><p className="font-label-md text-label-md font-semibold">{transaction.type.replaceAll('_', ' ')}</p><p className="text-xs text-on-surface-variant">{new Date(transaction.createdAt).toLocaleDateString()}</p></div>
+                  <span className={`font-label-md text-label-md font-bold ${transaction.amount >= 0 ? 'text-tertiary' : 'text-on-surface'}`}>{transaction.amount >= 0 ? '+' : ''}{transaction.currency} {Math.abs(transaction.amount).toLocaleString()}</span>
                 </div>
               ))}
             </div>

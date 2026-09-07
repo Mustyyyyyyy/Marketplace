@@ -164,6 +164,14 @@ router.post('/disputes/:id/resolve', requireCapability(CAPABILITIES.DISPUTES_RES
   try { res.json(await svc.resolveDispute(req.params.id, req.body.resolution, req.body.notes, req.user!.id)); } catch (e) { next(e); }
 });
 
+router.get('/payments', requireCapability(CAPABILITIES.PAYMENTS_VIEW), validateQuery(z.object({ page: z.coerce.number().optional(), pageSize: z.coerce.number().optional() })), async (req, res, next) => {
+  try { res.json(await svc.listPaymentOperations(Number((req as any).validatedQuery.page || 1), Number((req as any).validatedQuery.pageSize || 50))); } catch (e) { next(e); }
+});
+
+router.post('/payments/:id/refund', requireCapability(CAPABILITIES.PAYMENTS_REFUND), async (req: AuthedRequest, res, next) => {
+  try { res.json(await svc.refundPaymentOperation(req.params.id, req.user!.id)); } catch (e) { next(e); }
+});
+
 // =====================================================================
 // Reports & reviews
 // =====================================================================
