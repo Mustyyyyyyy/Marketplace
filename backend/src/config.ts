@@ -7,7 +7,7 @@ export const env = {
   JWT_ACCESS_TTL: process.env.JWT_ACCESS_TTL || '15m',
   JWT_REFRESH_TTL: process.env.JWT_REFRESH_TTL || '30d',
   PORT: Number(process.env.PORT || 4000),
-  NODE_ENV: process.env.NODE_ENV || 'development',
+  NODE_ENV: process.env.NODE_ENV || (process.env.VERCEL ? 'production' : 'development'),
   CORS_ORIGIN: process.env.CORS_ORIGIN || '*',
   UPLOAD_DIR: process.env.UPLOAD_DIR || './uploads',
   SMTP_HOST: process.env.SMTP_HOST || '',
